@@ -14,7 +14,7 @@ public class PlayerController : MonoBehaviour {
 
 	public float gravity = 20.0F;
 
-	private Vector3 moveDirection = Vector3.zero;
+	public Vector3 moveDirection = Vector3.zero;
 
 	// Use this for initialization
 	void Start () {
@@ -43,7 +43,9 @@ public class PlayerController : MonoBehaviour {
 
 				playerBody.transform.LookAt( transform.position + moveDirection, Vector3.up);
 
-				moveDirection = Camera.main.transform.TransformDirection(moveDirection).normalized;
+				moveDirection = Camera.main.transform.TransformDirection(moveDirection);
+
+				moveDirection = new Vector3(moveDirection.x, 0, moveDirection.z);
 
 				moveDirection *= speed;
 

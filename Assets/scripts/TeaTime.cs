@@ -1,68 +1,12 @@
-﻿// TeaTime v0.5.7 alpha
 
-// By Andrés Villalobos > andresalvivar@gmail.com > twitter.com/matnesis
-// Special thanks to Antonio Zamora > twitter.com/tzamora
-// Created 2014/12/26 12:21 am
+// @
+// TeaTime v0.8.4 beta
 
-// TeaTime is a fast & simple queue for timed callbacks, fashioned as a
-// MonoBehaviour extension set, focused on solving common coroutines patterns in
-// Unity games.
+// TeaTime is a fast & simple queue for timed callbacks, focused on solving
+// common coroutines patterns in Unity games.
 
-// Just put 'TeaTime.cs' somewhere in your project and call it inside any
-// MonoBehaviour using 'this.tt'.
-
-
-//    this.ttAdd("QueueName", 2, () =>
-//    {
-//        Debug.Log("2 seconds since QueueName started " + Time.time);
-//    })
-//    .ttLoop(3, delegate(ttHandler loop)
-//    {
-//        // This loop will run frame by frame for all his duration (3s) using
-//        // loop.deltaTime (a custom delta) for a timed interpolation.
-//        Camera.main.backgroundColor 
-//            = Color.Lerp(Camera.main.backgroundColor, Color.white, loop.deltaTime);
-//    })
-//    this.ttAdd("delegate(ttHandler t)
-//    {
-//        Sequence myTween = DOTween.Sequence();
-//        myTween.Append(transform.DOMoveX(5, 2.5f));
-//        myTween.Append(transform.DOMoveX(-5, 2.5f));
-
-//        // WaitFor waits for a time or YieldInstruction after the current
-//        // callback is done and before the next queued callback.
-//        t.WaitFor(myTween.WaitForCompletion());
-//    })
-//    .ttAdd(() =>
-//    {
-//        Debug.Log("10 seconds since QueueName started " + Time.time);
-//    })
-//    .ttNow(1, () =>
-//    {
-//        Debug.Log("ttNow is arbitrary and ignores the queue order " + Time.time);
-//    })
-//    .ttWait(); 
-//    // ttWait locks the current queue, ignoring new appends until all callbacks are
-//    // done.
-
-//    // And finally, ttReset let you stop a running queue, and just like ttNow,
-//    // is immediate and ignores the queue order.
-//    this.ttReset("QueueName");
-
-
-// Important details to remember:
-// - Execution starts immediately
-// - Queues are unique to his MonoBehaviour (this is an extension after all)
-// - Naming your queue is recommended if you want to use more than one queue with safety
-// - You can use a YieldInstruction instead of time (i.e. WaitForEndOfFrame)
-// - ttWait ensures a complete and safe run during continuous calls
-// - ttHandler adds special control features to your callbacks
-// - You can create tween-like behaviours mixing loops, ttHandler.deltaTime and lerp functions
-// - ttHandler.waitFor applies only once and at the end of the current callback
-// - Both ttNow & ttReset runs immediately (ignoring the queue order)
-// - Below the sugar, everything runs on Unity coroutines!
-
-// And that's it!
+// Andrés Villalobos ~ twitter.com/matnesis ~ andresalvivar@gmail.com
+// Created 2014/12/26 12:21 am ~ Rewritten 2015/09/15 12:28 pm
 
 
 // Copyright (c) 2014/12/26 andresalvivar@gmail.com
@@ -74,8 +18,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -86,725 +30,978 @@
 // SOFTWARE.
 
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-
-/// <summary>
-/// Timed callback data.
-/// </summary>
-public class TeaTask
+namespace matnesis.TeaTime
 {
-    public float time = 0f;
-    public YieldInstruction yieldInstruction = null;
-    public Action callback = null;
-    public Action<ttHandler> callbackWithHandler = null;
-    public bool isLoop = false;
+	using System;
+	using System.Collections;
+	using System.Collections.Generic;
+	using UnityEngine;
 
-
-    public TeaTask(float time, YieldInstruction yield, Action callback, Action<ttHandler> callbackWithHandler, bool isLoop)
-    {
-        this.time = time;
-        this.yieldInstruction = yield;
-        this.callback = callback;
-        this.callbackWithHandler = callbackWithHandler;
-        this.isLoop = isLoop;
-    }
-}
-
-
-/// <summary>
-/// TeaTime Handler.
-/// </summary>
-public class ttHandler
-{
-    public bool isActive = true;
-    public float t = 0f;
-    public float deltaTime = 0f;
-    public float timeSinceStart = 0f;
-    public YieldInstruction yieldToWait = null;
-
-
-    /// <summary>
-    /// Breaks the current loop.
-    /// </summary>
-    public void Break()
-    {
-        this.isActive = false;
-    }
-
-
-    /// <summary>
-    /// Waits for a time interval after the current callback.
-    /// </summary>
-    public void WaitFor(float interval)
-    {
-        this.yieldToWait = new WaitForSeconds(interval);
-    }
-
-
-    /// <summary>
-    /// Waits for a YieldInstruction after the current callback.
-    /// </summary>
-    public void WaitFor(YieldInstruction yieldToWait)
-    {
-        this.yieldToWait = yieldToWait;
-    }
-}
-
-
-/// <summary>
-/// TeaTime is a fast & simple queue for timed callbacks, fashioned as a
-/// MonoBehaviour extension set, focused on solving common coroutines patterns in
-/// Unity games.
-/// </summary>
-public static class TeaTime
-{
-    /// <summary>
-    /// Main queue for all the timed callbacks.
-    /// </summary>
-    private static Dictionary<MonoBehaviour, Dictionary<string, List<TeaTask>>> mainQueue;
-
-    /// <summary>
-    /// Contains the running queues in the MonoBehaviour.
-    /// </summary>
-    private static Dictionary<MonoBehaviour, List<string>> runningQueues;
-
-    /// <summary>
-    /// Contains the current queue (last used) in the MonoBehaviour.
-    /// </summary>
-    private static Dictionary<MonoBehaviour, string> currentQueue;
-
-    /// <summary>
-    /// Contains the queues locked in the MonoBehaviour.
-    /// </summary>
-    private static Dictionary<MonoBehaviour, List<string>> lockedQueues;
-
-    /// <summary>
-    /// Contains the coroutines running in the MonoBehaviour, by queue.
-    /// </summary>
-    private static Dictionary<MonoBehaviour, Dictionary<string, List<IEnumerator>>> runningCoroutines;
-
-
-    /// <summary>
-    /// Prepares the main queue for the instance.
-    /// </summary>
-    private static void PrepareInstanceMainQueue(MonoBehaviour instance, string queueName = null)
-    {
-        if (mainQueue == null)
-            mainQueue = new Dictionary<MonoBehaviour, Dictionary<string, List<TeaTask>>>();
-
-        if (mainQueue.ContainsKey(instance) == false)
-            mainQueue.Add(instance, new Dictionary<string, List<TeaTask>>());
-
-        if (queueName != null)
-        {
-            if (mainQueue[instance].ContainsKey(queueName) == false)
-                mainQueue[instance].Add(queueName, new List<TeaTask>());
-        }
-    }
-
-
-    /// <summary>
-    /// Prepares the dictionary for the running queues in the instance.
-    /// </summary>
-    /// <param name="instance"></param>
-    private static void PrepareInstanceRunningQueues(MonoBehaviour instance)
-    {
-        if (runningQueues == null)
-            runningQueues = new Dictionary<MonoBehaviour, List<string>>();
-
-        if (runningQueues.ContainsKey(instance) == false)
-            runningQueues.Add(instance, new List<string>());
-    }
-
-
-    /// <summary>
-    /// Prepares the dictionary for the current queue (last used) in the instance.
-    /// </summary>
-    private static void PrepareInstanceCurrentQueue(MonoBehaviour instance)
-    {
-        if (currentQueue == null)
-            currentQueue = new Dictionary<MonoBehaviour, string>();
-
-        // Default name
-        if (currentQueue.ContainsKey(instance) == false)
-            currentQueue[instance] = "TEATIME_DEFAULT_QUEUE_NAME";
-    }
-
-
-    /// <summary>
-    /// Prepares the dictionary for the locked queues in the instance.
-    /// </summary>
-    private static void PrepareInstanceLockedQueues(MonoBehaviour instance)
-    {
-        if (lockedQueues == null)
-            lockedQueues = new Dictionary<MonoBehaviour, List<string>>();
-
-        if (lockedQueues.ContainsKey(instance) == false)
-            lockedQueues.Add(instance, new List<string>());
-    }
-
-
-    /// <summary>
-    /// Prepares the dictionary for the coroutines running in the instance.
-    /// </summary>
-    private static void PrepareInstanceRunningCoroutines(MonoBehaviour instance, string queueName)
-    {
-        if (runningCoroutines == null)
-            runningCoroutines = new Dictionary<MonoBehaviour, Dictionary<string, List<IEnumerator>>>();
-
-        if (runningCoroutines.ContainsKey(instance) == false)
-            runningCoroutines.Add(instance, new Dictionary<string, List<IEnumerator>>());
-
-        if (runningCoroutines[instance].ContainsKey(queueName) == false)
-            runningCoroutines[instance].Add(queueName, new List<IEnumerator>());
-    }
-
-
-    /// <summary>
-    /// Returns true if the queue is locked.
-    /// </summary>
-    private static bool IsLocked(MonoBehaviour instance, string queueName)
-    {
-        PrepareInstanceLockedQueues(instance);
-
-        if (lockedQueues[instance].Contains(queueName))
-            return true;
-
-        return false;
-    }
-
-
-    /// <summary>
-    ///// Appends a callback (timed or looped) into a queue.
-    /// </summary>
-    private static MonoBehaviour ttAdd(this MonoBehaviour instance, string queueName, float timeDelay, YieldInstruction yieldDelay,
-        Action callback, Action<ttHandler> callbackWithHandler,
-        bool isLoop)
-    {
-        // Ignore locked queues (but remember in his name)
-        if (IsLocked(instance, queueName))
-        {
-            currentQueue[instance] = queueName;
-            return instance;
-        }
-        //else
-        //{
-        //    if (isLoop)
-        //    {
-        //        Debug.Log("Queue < ttAppendLoop " + queueName);
-        //    }
-        //    else
-        //    {
-        //        Debug.Log("Queue < ttAppend " + queueName);
-        //    }
-        //}
-
-        PrepareInstanceMainQueue(instance, queueName);
-        PrepareInstanceCurrentQueue(instance);
-
-        // Sets the active queue
-        currentQueue[instance] = queueName;
-
-        // Appends a new task
-        List<TeaTask> taskList = mainQueue[instance][queueName];
-        taskList.Add(new TeaTask(timeDelay, yieldDelay, callback, callbackWithHandler, isLoop));
-
-        // Execute queue
-        instance.StartCoroutine(ExecuteQueue(instance, queueName));
-
-        return instance;
-    }
-
-
-    /// <summary>
-    /// Appends a timed callback into a queue.
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, string queueName, float timeDelay, Action callback)
-    {
-        return instance.ttAdd(queueName, timeDelay, null, callback, null, false);
-    }
-
-
-    /// <summary>
-    /// Appends a timed callback into a queue.
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, string queueName, float timeDelay, Action<ttHandler> callback)
-    {
-        return instance.ttAdd(queueName, timeDelay, null, null, callback, false);
-    }
-
-
-    /// <summary>
-    /// Appends a timed callback into a queue.
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, string queueName, YieldInstruction yieldToWait, Action callback)
-    {
-        return instance.ttAdd(queueName, 0, yieldToWait, callback, null, false);
-    }
-
-
-    /// <summary>
-    /// Appends a timed callback into a queue.
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, string queueName, YieldInstruction yieldToWait, Action<ttHandler> callback)
-    {
-        return instance.ttAdd(queueName, 0, yieldToWait, null, callback, false);
-    }
-
-
-    /// <summary>
-    /// Appends a timed callback into the active queue (or default).
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, float timeDelay, Action callback)
-    {
-        PrepareInstanceCurrentQueue(instance);
-
-        return instance.ttAdd(currentQueue[instance], timeDelay, null, callback, null, false);
-    }
-
-
-    /// <summary>
-    /// Appends a timed callback into the active queue (or default).
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, float timeDelay, Action<ttHandler> callback)
-    {
-        PrepareInstanceCurrentQueue(instance);
-
-        return instance.ttAdd(currentQueue[instance], timeDelay, null, null, callback, false);
-    }
-
-
-    /// <summary>
-    /// Appends a timed callback into the active queue (or default).
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, YieldInstruction yieldToWait, Action callback)
-    {
-        PrepareInstanceCurrentQueue(instance);
-
-        return instance.ttAdd(currentQueue[instance], 0, yieldToWait, callback, null, false);
-    }
-
-
-    /// <summary>
-    /// Appends a timed callback into the active queue (or default).
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, YieldInstruction yieldToWait, Action<ttHandler> callback)
-    {
-        PrepareInstanceCurrentQueue(instance);
-
-        return instance.ttAdd(currentQueue[instance], 0, yieldToWait, null, callback, false);
-    }
-
-
-    /// <summary>
-    /// Appends a time interval into a queue.
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, string queueName, float interval)
-    {
-        return instance.ttAdd(queueName, interval, null, null, null, false);
-    }
-
-
-    /// <summary>
-    /// Appends a time interval into the active queue (or default).
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, float interval)
-    {
-        PrepareInstanceCurrentQueue(instance);
-
-        return instance.ttAdd(currentQueue[instance], interval, null, null, null, false);
-    }
-
-
-    /// <summary>
-    /// Appends a timed callback into a queue.
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, string queueName, Action callback)
-    {
-        return instance.ttAdd(queueName, 0, null, callback, null, false);
-    }
-
-
-    /// <summary>
-    /// Appends a timed callback into a queue.
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, string queueName, Action<ttHandler> callback)
-    {
-        return instance.ttAdd(queueName, 0, null, null, callback, false);
-    }
-
-
-    /// <summary>
-    /// Appends a timed callback into the active queue (or default).
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, Action callback)
-    {
-        PrepareInstanceCurrentQueue(instance);
-
-        return instance.ttAdd(currentQueue[instance], 0, null, callback, null, false);
-    }
-
-
-    /// <summary>
-    /// Appends a timed callback into the active queue (or default).
-    /// </summary>
-    public static MonoBehaviour ttAdd(this MonoBehaviour instance, Action<ttHandler> callback)
-    {
-        PrepareInstanceCurrentQueue(instance);
-
-        return instance.ttAdd(currentQueue[instance], 0, null, null, callback, false);
-    }
-
-
-    /// <summary>
-    /// Appends a callback that runs frame by frame (until his exit is forced) into a queue.
-    /// </summary>
-    public static MonoBehaviour ttLoop(this MonoBehaviour instance, string queueName, float duration, Action<ttHandler> callback)
-    {
-        return instance.ttAdd(queueName, duration, null, null, callback, true);
-    }
-
-
-    /// <summary>
-    /// Appends a callback that runs frame by frame (until his exit is forced) into a queue.
-    /// </summary>
-    public static MonoBehaviour ttLoop(this MonoBehaviour instance, string queueName, Action<ttHandler> callback)
-    {
-        return instance.ttAdd(queueName, 0, null, null, callback, true);
-    }
-
-
-    /// <summary>
-    /// Appends a callback that runs frame by frame for his duration into the active queue.
-    /// </summary>
-    public static MonoBehaviour ttLoop(this MonoBehaviour instance, float duration, Action<ttHandler> callback)
-    {
-        PrepareInstanceCurrentQueue(instance);
-
-        return instance.ttAdd(currentQueue[instance], duration, null, null, callback, true);
-    }
-
-
-    /// <summary>
-    /// Appends a callback that runs frame by frame (until his exit is forced) into the active queue.
-    /// </summary>
-    public static MonoBehaviour ttLoop(this MonoBehaviour instance, Action<ttHandler> callback)
-    {
-        PrepareInstanceCurrentQueue(instance);
-
-        return instance.ttAdd(currentQueue[instance], 0, null, null, callback, true);
-    }
 
 	/// <summary>
-	/// Appends a callback that runs frame by frame (until his exit is forced) into the active queue.
+	/// Timed Task node.
 	/// </summary>
-	public static void ttSimpleLoop(this MonoBehaviour instance, float duration, Action<ttHandler> callback)
+	internal class ttTask
 	{
-		instance.StartCoroutine (ExecuteSimpleLoop(duration, callback));
+		public bool isLoop = false;
 
+		public float time = 0;
+		public Func<float> timeByFunc = null;
+
+		public Action callback = null;
+		public Action<ttHandler> callbackWithHandler = null;
 	}
 
+
 	/// <summary>
-	/// Executes a callback inside a loop until time.
+	/// TeaTime handler for callbacks.
 	/// </summary>
-	private static IEnumerator ExecuteSimpleLoop(float duration, Action<ttHandler> callback)
+	public class ttHandler
 	{
-		// Only for positive values
-		if (duration <= 0)
-			yield break;
-		
-		ttHandler loopHandler = new ttHandler();
+		/// <summary>
+		/// Current TeaTime queue.
+		/// </summary>
+		public TeaTime self;
 
-		float tRate = 1 / duration;
-		
-		// Run while active until duration
-		while (loopHandler.isActive && loopHandler.timeSinceStart < duration)
+		public float t = 0;
+		public float deltaTime = 0;
+		public float timeSinceStart = 0;
+
+		internal bool isLooping = false;
+		internal bool isReversed = false;
+		internal List<YieldInstruction> yieldsToWait = null;
+
+
+		/// <summary>
+		/// Ends the current loop.
+		/// </summary>
+		public void EndLoop()
 		{
-			float delta = Time.deltaTime;
-			
-			// Completion from 0 to 1
-			loopHandler.t += tRate * delta;
-			
-			// Custom delta based on duration
-			loopHandler.deltaTime = 1 / (duration - loopHandler.timeSinceStart) * delta;
+			isLooping = false;
+		}
 
-			loopHandler.timeSinceStart += delta;
-			
-			// Execute
-			if (callback != null)
-				callback(loopHandler);
-			
-			// Yields once and resets
-			if (loopHandler.yieldToWait != null)
+
+		/// <summary>
+		/// Appends a YieldInstruction to wait after the current callback execution.
+		/// </summary>
+		public void Wait(YieldInstruction yi)
+		{
+			if (yieldsToWait == null)
+				yieldsToWait = new List<YieldInstruction>();
+
+			yieldsToWait.Add(yi);
+		}
+
+
+		/// <summary>
+		/// Appends a time delay to wait after the current callback execution.
+		/// </summary>
+		public void Wait(float time)
+		{
+			if (time <= 0) return;
+
+			Wait(new WaitForSeconds(time));
+		}
+
+
+		/// <summary>
+		/// Appends a TeaTime to wait after the current callback execution that
+		/// is also affected by the queue .Stop() and .Reset().
+		/// </summary>
+		public void Wait(TeaTime tt)
+		{
+			// A reference to the waiting list
+			if (!self._waiting.Contains(tt))
 			{
-				yield return loopHandler.yieldToWait;
-
-				loopHandler.yieldToWait = null;
+				self._waiting.Add(tt);
+				Wait(tt.WaitForCompletion());
 			}
-			
-			yield return null;
+		}
+
+
+		/// <summary>
+		/// Appends a boolean condition to wait until true after the current callback
+		/// execution.
+		/// </summary>
+		public void Wait(Func<bool> condition, float checkDelay)
+		{
+			// #todo This need to be cached somehow
+			Wait(self._instance.tt().Wait(condition, checkDelay));
 		}
 	}
 
 
-
-    /// <summary>
-    /// Executes a timed callback immediately (this function ignores the queue order).
-    /// </summary>
-    private static MonoBehaviour ttNow(this MonoBehaviour instance, float timeDelay, YieldInstruction yieldToWait, Action callback)
-    {
-        instance.StartCoroutine(ExecuteOnce(timeDelay, yieldToWait, callback, null));
-
-        return instance;
-    }
+	/// <summary>
+	/// TeaTime core extensions (static magic).
+	/// </summary>
+	public static class TeaTimeExtensions
+	{
+		private static Dictionary<MonoBehaviour, Dictionary<string, TeaTime>> ttRegister; // Queues bounded by 'tt(string)'
 
 
-    /// <summary>
-    /// Executes a timed callback immediately (this function ignores the queue order).
-    /// </summary>
-    public static MonoBehaviour ttNow(this MonoBehaviour instance, float timeDelay, Action callback)
-    {
-        return instance.ttNow(timeDelay, null, callback);
-    }
+		/// <summary>
+		/// Returns a new TeaTime queue ready to be used. This is basically a
+		/// shorcut to 'new TeaTime(this);' in MonoBehaviours.
+		/// </summary>
+		public static TeaTime tt(this MonoBehaviour instance)
+		{
+			return new TeaTime(instance);
+		}
 
 
-    /// <summary>
-    /// Executes a timed callback immediately (this function ignores the queue order).
-    /// </summary>
-    public static MonoBehaviour ttNow(this MonoBehaviour instance, YieldInstruction yieldToWait, Action callback)
-    {
-        return instance.ttNow(0, yieldToWait, callback);
-    }
+		/// <summary>
+		/// Returns a TeaTime queue bounded to his name, unique per
+		/// MonoBehaviour instance, new on the first call. This allows you to
+		/// access queues without a formal definition.
+		/// </summary>
+		public static TeaTime tt(this MonoBehaviour instance, string queueName)
+		{
+			// #todo ttRegister will (probably) need an auto clean up from
+			// time to time if this technique is used in volatile GameObjects.
+
+			// First time
+			if (ttRegister == null)
+				ttRegister = new Dictionary<MonoBehaviour, Dictionary<string, TeaTime>>();
+
+			if (!ttRegister.ContainsKey(instance))
+				ttRegister[instance] = new Dictionary<string, TeaTime>();
+
+			if (!ttRegister[instance].ContainsKey(queueName))
+				ttRegister[instance][queueName] = new TeaTime(instance);
 
 
-    /// <summary>
-    /// Locks the current queue (no more appends) until all his callbacks are completed.
-    /// </summary>
-    public static MonoBehaviour ttWait(this MonoBehaviour instance)
-    {
-        PrepareInstanceMainQueue(instance);
-        PrepareInstanceCurrentQueue(instance);
-
-        // Ignore if the queue if empty
-        if (mainQueue[instance].ContainsKey(currentQueue[instance]) == false ||
-            mainQueue[instance][currentQueue[instance]].Count < 1)
-            return instance;
-
-        // Locks the queue
-        if (IsLocked(instance, currentQueue[instance]) == false)
-            lockedQueues[instance].Add(currentQueue[instance]);
-
-        return instance;
-    }
+			return ttRegister[instance][queueName];
+		}
+	}
 
 
-    /// <summary>
-    /// Stop and reset the queue immediately (this function ignores the queue order).
-    /// </summary>
-    public static MonoBehaviour ttReset(this MonoBehaviour instance, string queueName)
-    {
-        PrepareInstanceRunningCoroutines(instance, queueName);
+	/// <summary>
+	/// (Currently unused) TeaTime custom yield that waits for completion.
+	/// </summary>
+	internal class ttWaitForCompletion : CustomYieldInstruction
+	{
+		private TeaTime tt;
 
-        // Initialize all
-        PrepareInstanceMainQueue(instance, queueName);
-        PrepareInstanceRunningQueues(instance);
-        PrepareInstanceCurrentQueue(instance);
-        PrepareInstanceLockedQueues(instance);
-        PrepareInstanceRunningCoroutines(instance, queueName);
+		public override bool keepWaiting { get { return tt.IsCompleted; } }
 
-        // Delete all
-        mainQueue[instance][queueName].Clear();
-        runningQueues[instance].Clear();
-        currentQueue[instance] = queueName;
-        lockedQueues[instance].Clear();
-
-        // Stop coroutines
-        foreach (IEnumerator c in runningCoroutines[instance][queueName])
-        {
-            instance.StopCoroutine(c);
-        }
-        runningCoroutines[instance][queueName].Clear();
-
-        return instance;
-    }
+		public ttWaitForCompletion(TeaTime tt) { this.tt = tt; }
+	}
 
 
-    /// <summary>
-    /// Execute all timed callbacks and loops for the instance queue.
-    /// </summary>
-    private static IEnumerator ExecuteQueue(MonoBehaviour instance, string queueName)
-    {
-        // Ignore if empty
-        if (mainQueue.ContainsKey(instance) == false)
-            yield break;
-
-        if (mainQueue[instance].ContainsKey(queueName) == false)
-            yield break;
-
-        PrepareInstanceRunningQueues(instance);
-
-        // Ignore if already running
-        if (runningQueues.ContainsKey(instance) && runningQueues[instance].Contains(queueName))
-            yield break;
-
-        // Locks the queue
-        runningQueues[instance].Add(queueName);
-
-        // Coroutines registry
-        PrepareInstanceRunningCoroutines(instance, queueName);
-        IEnumerator coroutine = null;
-
-        // Run until depleted (over a clone)
-        List<TeaTask> batch = new List<TeaTask>();
-        batch.AddRange(mainQueue[instance][queueName]);
-
-        foreach (TeaTask task in batch)
-        {
-            // Select and prepare
-            if (task.isLoop)
-            {
-                if (task.time > 0)
-                {
-                    coroutine = ExecuteLoop(task.time, task.callbackWithHandler);
-                }
-                else
-                {
-                    coroutine = ExecuteInfiniteLoop(task.callbackWithHandler);
-                }
-            }
-            else
-            {
-                coroutine = ExecuteOnce(task.time, task.yieldInstruction, task.callback, task.callbackWithHandler);
-            }
-
-            // Register and execute
-            runningCoroutines[instance][queueName].Add(coroutine);
-            yield return instance.StartCoroutine(coroutine);
-            runningCoroutines[instance][queueName].Remove(coroutine);
-
-            // Done
-            mainQueue[instance][queueName].Remove(task);
-        }
-
-        // Unlocks the queue
-        runningQueues[instance].Remove(queueName);
-
-        // Try again is there are new items, else, remove the lock
-        if (mainQueue[instance][queueName].Count > 0)
-        {
-            instance.StartCoroutine(ExecuteQueue(instance, queueName));
-        }
-        else
-        {
-            if (IsLocked(instance, queueName))
-                lockedQueues[instance].Remove(queueName);
-        }
-    }
+	/// <summary>
+	/// YieldInstruction static cache!
+	/// Found here http://forum.unity3d.com/threads/c-coroutine-waitforseconds-garbage-collection-tip.224878/
+	/// </summary>
+	public static class ttYield
+	{
+		class FloatComparer : IEqualityComparer<float>
+		{
+			bool IEqualityComparer<float>.Equals(float x, float y) { return x == y; }
+			int IEqualityComparer<float>.GetHashCode(float obj) { return obj.GetHashCode(); }
+		}
 
 
-    /// <summary>
-    /// Executes a timed callback.
-    /// </summary>
-    private static IEnumerator ExecuteOnce(float timeToWait, YieldInstruction yieldToWait,
-        Action callback, Action<ttHandler> callbackWithHandler)
-    {
-        // Wait until
-        if (timeToWait > 0)
-            yield return new WaitForSeconds(timeToWait);
-
-        if (yieldToWait != null)
-            yield return yieldToWait;
-
-        // Executes the normal handler
-        if (callback != null)
-            callback();
-
-        // Executes the callback with handler (and waits his yield)
-        if (callbackWithHandler != null)
-        {
-            ttHandler t = new ttHandler();
-            callbackWithHandler(t);
-
-            if (t.yieldToWait != null)
-                yield return t.yieldToWait;
-        }
-
-        yield return null;
-    }
+		static Dictionary<float, WaitForSeconds> _secondsCache = new Dictionary<float, WaitForSeconds>(100, new FloatComparer());
 
 
-    /// <summary>
-    /// Executes a callback inside a loop until time.
-    /// </summary>
-    private static IEnumerator ExecuteLoop(float duration, Action<ttHandler> callback)
-    {
-        // Only for positive values
-        if (duration <= 0)
-            yield break;
-
-        ttHandler loopHandler = new ttHandler();
-        float tRate = 1 / duration;
-
-        // Run while active until duration
-        while (loopHandler.isActive && loopHandler.timeSinceStart < duration)
-        {
-            float delta = Time.deltaTime;
-
-			// Completion from 0 to 1
-            loopHandler.t += tRate * delta;
-
-			Debug.Log(loopHandler.t + "<----");
-
-            // Custom delta based on duration
-            loopHandler.deltaTime = 1 / (duration - loopHandler.timeSinceStart) * delta;
-            loopHandler.timeSinceStart += delta;
-
-            // Execute
-            if (callback != null)
-                callback(loopHandler);
-
-            // Yields once and resets
-            if (loopHandler.yieldToWait != null)
-            {
-                yield return loopHandler.yieldToWait;
-                loopHandler.yieldToWait = null;
-            }
-
-            yield return null;
-        }
-    }
+		static WaitForEndOfFrame _endOfFrame = new WaitForEndOfFrame();
+		public static WaitForEndOfFrame EndOfFrame
+		{
+			get { return _endOfFrame; }
+		}
 
 
-    /// <summary>
-    /// Executes a callback inside an infinite loop.
-    /// </summary>
-    private static IEnumerator ExecuteInfiniteLoop(Action<ttHandler> callback)
-    {
-        ttHandler loopHandler = new ttHandler();
+		static WaitForFixedUpdate _fixedUpdate = new WaitForFixedUpdate();
+		public static WaitForFixedUpdate FixedUpdate
+		{
+			get { return _fixedUpdate; }
+		}
 
-        // Run while active
-        while (loopHandler.isActive)
-        {
-            float delta = Time.deltaTime;
-            loopHandler.deltaTime = delta;
-            loopHandler.timeSinceStart += delta;
 
-            // Execute
-            if (callback != null)
-                callback(loopHandler);
+		public static WaitForSeconds Seconds(float seconds)
+		{
+			WaitForSeconds wfs = null;
 
-            // Yields once and resets
-            if (loopHandler.yieldToWait != null)
-            {
-                yield return loopHandler.yieldToWait;
-                loopHandler.yieldToWait = null;
-            }
+			if (!_secondsCache.TryGetValue(seconds, out wfs))
+				_secondsCache.Add(seconds, wfs = new WaitForSeconds(seconds));
 
-            yield return null;
-        }
-    }
+			return wfs;
+		}
+	}
+
+
+	/// <summary>
+	/// TeaTime is a fast & simple queue for timed callbacks, focused on solving
+	/// common coroutines patterns in Unity games.
+	/// </summary>
+	public class TeaTime
+	{
+		// Queue
+		private List<ttTask> _tasks = new List<ttTask>(); // Tasks list used as a queue
+		internal List<TeaTime> _waiting = new List<TeaTime>(); // TeaTimes to wait via ttHandler.Wait(
+		private int _currentTask = 0; // Current task mark (to be executed)
+		private int _executedCount = 0; // Executed task count
+		private int _lastPlayExecutedCount = 0; // Executed task count during the last play
+
+
+		// Dependencies
+		internal MonoBehaviour _instance = null; // Required to access Unity coroutine fuctions
+		private Coroutine _currentCoroutine = null; // Coroutine that holds the queue execution
+
+
+		// States
+		private bool _isPlaying = false; // True while queue execution
+		private bool _isPaused = false; // On .Pause()
+		private bool _isImmutable = false; // On .Immutable() mode
+		private bool _isRepeating = false; // On .Repeat() mode
+		private bool _isConsuming = false; // On .Consume() mode
+		private bool _isReversed = false; // On .Reverse() Backward() Forward() mode
+		private bool _isYoyo = false; // On .Yoyo() mode
+
+
+		/// <summary>
+		/// True while the queue is being executed.
+		/// </summary>
+		public bool IsPlaying
+		{
+			get { return _isPlaying; }
+		}
+
+		/// <summary>
+		/// True if the queue execution is done.
+		/// </summary>
+		public bool IsCompleted
+		{
+			get { return _currentTask >= _tasks.Count && !_isPlaying; }
+		}
+
+		/// <summary>
+		/// Queue count.
+		/// </summary>
+		public int Count
+		{
+			get { return _tasks.Count; }
+		}
+
+		/// <summary>
+		/// Current queue position to be executed.
+		/// </summary>
+		public int Current
+		{
+			get { return _currentTask; }
+		}
+
+
+		/// <summary>
+		/// Executed callback count.
+		/// </summary>
+		public int ExecutedCount
+		{
+			get { return _executedCount; }
+		}
+
+
+		/// <summary>
+		/// A TeaTime queue requires a MonoBehaviour instance to access his
+		/// coroutine fuctions.
+		/// </summary>
+		public TeaTime(MonoBehaviour instance)
+		{
+			_instance = instance;
+		}
+
+
+		// @
+		// ADD
+
+
+		/// <summary>
+		/// Appends a new ttTask.
+		/// </summary>
+		private TeaTime Add(float timeDelay, Func<float> timeDelayByFunc, Action callback, Action<ttHandler> callbackWithHandler)
+		{
+			// Ignores appends on Immutable mode
+			if (!_isImmutable)
+			{
+				ttTask newTask = new ttTask();
+				newTask.time = timeDelay;
+				newTask.timeByFunc = timeDelayByFunc;
+				newTask.callback = callback;
+				newTask.callbackWithHandler = callbackWithHandler;
+
+				_tasks.Add(newTask);
+			}
+
+
+			// Autoplay if not paused or playing
+			return _isPaused || _isPlaying ? this : this.Play();
+		}
+
+
+		/// <summary>
+		/// Appends a timed callback.
+		/// </summary>
+		public TeaTime Add(float timeDelay, Action callback)
+		{
+			return Add(timeDelay, null, callback, null);
+		}
+
+
+		/// <summary>
+		/// Appends a timed callback.
+		/// </summary>
+		public TeaTime Add(Func<float> timeByFunc, Action callback)
+		{
+			return Add(0, timeByFunc, callback, null);
+		}
+
+
+		/// <summary>
+		/// Appends a timed callback.
+		/// </summary>
+		public TeaTime Add(float timeDelay, Action<ttHandler> callback)
+		{
+			return Add(timeDelay, null, null, callback);
+		}
+
+
+		/// <summary>
+		/// Appends a timed callback.
+		/// </summary>
+		public TeaTime Add(Func<float> timeByFunc, Action<ttHandler> callback)
+		{
+			return Add(0, timeByFunc, null, callback);
+		}
+
+
+		/// <summary>
+		/// Appends a time delay.
+		/// </summary>
+		public TeaTime Add(float timeDelay)
+		{
+			return Add(timeDelay, null, null, null);
+		}
+
+
+		/// <summary>
+		/// Appends a time delay.
+		/// </summary>
+		public TeaTime Add(Func<float> timeByFunc)
+		{
+			return Add(0, timeByFunc, null, null);
+		}
+
+
+		/// <summary>
+		/// Appends a callback.
+		/// </summary>
+		public TeaTime Add(Action callback)
+		{
+			return Add(0, null, callback, null);
+		}
+
+
+		/// <summary>
+		/// Appends a callback.
+		/// </summary>
+		public TeaTime Add(Action<ttHandler> callback)
+		{
+			return Add(0, null, null, callback);
+		}
+
+
+		// @
+		// LOOP
+
+
+		/// <summary>
+		/// Appends a callback loop (if duration is less than 0, the loop runs
+		/// infinitely).
+		/// </summary>
+		private TeaTime Loop(float duration, Func<float> durationByFunc, Action<ttHandler> callback)
+		{
+			// Ignores appends on Immutable mode
+			if (!_isImmutable)
+			{
+				ttTask newTask = new ttTask();
+				newTask.isLoop = true;
+				newTask.time = duration;
+				newTask.timeByFunc = durationByFunc;
+				newTask.callbackWithHandler = callback;
+
+				_tasks.Add(newTask);
+			}
+
+
+			// Autoplay if not paused or playing
+			return _isPaused || _isPlaying ? this : this.Play();
+		}
+
+
+		/// <summary>
+		/// Appends a callback loop (if duration is less than 0,
+		/// the loop runs infinitely).
+		/// </summary>
+		public TeaTime Loop(float duration, Action<ttHandler> callback)
+		{
+			return Loop(duration, null, callback);
+		}
+
+
+		/// <summary>
+		/// Appends a callback loop (if duration is less than 0,
+		/// the loop runs infinitely).
+		/// </summary>
+		public TeaTime Loop(Func<float> durationByFunc, Action<ttHandler> callback)
+		{
+			return Loop(0, durationByFunc, callback);
+		}
+
+
+		/// <summary>
+		/// Appends an infinite callback loop.
+		/// </summary>
+		public TeaTime Loop(Action<ttHandler> callback)
+		{
+			return Loop(-1, null, callback);
+		}
+
+
+		// @
+		// QUEUE MODES
+
+
+		/// <summary>
+		/// Enables Immutable mode, the queue will ignore new appends (.Add
+		/// .Loop .If)
+		/// </summary>
+		public TeaTime Immutable()
+		{
+			_isImmutable = true;
+
+			return this;
+		}
+
+
+		/// <summary>
+		/// Enables Repeat mode, the queue will always be restarted on
+		/// completion.
+		/// </summary>
+		public TeaTime Repeat()
+		{
+			_isRepeating = true;
+
+			return this;
+		}
+
+
+		/// <summary>
+		/// Enables Consume mode, the queue will remove each callback after
+		/// execution.
+		/// </summary>
+		public TeaTime Consume()
+		{
+			_isConsuming = true;
+
+			return this;
+		}
+
+
+		/// <summary>
+		/// Reverses the callback execution order (From .Forward() to
+		/// .Backward() mode and viceversa).
+		/// </summary>
+		public TeaTime Reverse()
+		{
+			_isReversed = !_isReversed;
+			if (IsPlaying) _currentTask = _tasks.Count - _currentTask;
+
+			return this;
+		}
+
+		/// <summary>
+		/// Enables Backward mode, executing callbacks on reverse order
+		/// (including Loops).
+		/// </summary>
+		public TeaTime Backward()
+		{
+			if (!_isReversed) return this.Reverse();
+			return this;
+		}
+
+		/// <summary>
+		/// Enables Forward mode (the default), executing callbacks one after the
+		/// other.
+		/// </summary>
+		public TeaTime Forward()
+		{
+			if (_isReversed) return this.Reverse();
+			return this;
+		}
+
+
+		/// <summary>
+		/// Enables Yoyo mode, that will .Reverse() the callback execution order
+		/// when the queue is completed. Only once per play without Repeat mode.
+		/// </summary>
+		public TeaTime Yoyo()
+		{
+			_isYoyo = true;
+
+			return this;
+		}
+
+
+		/// <summary>
+		/// Disables all modes (Immutable, Repeat, Consume, Backward, Yoyo).
+		/// Just like new.
+		/// </summary>
+		public TeaTime Release()
+		{
+			_isImmutable = _isRepeating = _isConsuming = _isYoyo = false;
+			return this.Forward();
+		}
+
+
+		// @
+		// CONTROL
+
+
+		/// <summary>
+		/// Pauses the queue execution (use .Play() to resume).
+		/// </summary>
+		public TeaTime Pause()
+		{
+			_isPaused = true;
+
+			return this;
+		}
+
+
+		/// <summary>
+		/// Stops the queue execution (use .Play() to start over).
+		/// </summary>
+		public TeaTime Stop()
+		{
+			if (_currentCoroutine != null)
+				_instance.StopCoroutine(_currentCoroutine);
+
+			_currentTask = 0;
+			_isPlaying = false;
+
+
+			// Stop all TeaTimes on .Wait(
+			for (int i = 0, len = _waiting.Count; i < len; i++)
+				_waiting[i].Stop();
+			_waiting.Clear();
+
+
+			return this;
+		}
+
+
+		/// <summary>
+		/// Starts or resumes the queue execution.
+		/// </summary>
+		public TeaTime Play()
+		{
+			// Unpause always
+			_isPaused = false;
+
+
+			// Ignore if currently playing
+			if (_isPlaying) return this;
+
+			// or Empty?
+			if (_tasks.Count <= 0) return this;
+
+
+			// Restart if already finished
+			if (_currentTask >= _tasks.Count)
+				_currentTask = 0;
+
+
+			// Execute!
+			_currentCoroutine = _instance.StartCoroutine(ExecuteQueue());
+
+
+			return this;
+		}
+
+
+		/// <summary>
+		/// Restarts the queue execution (.Stop().Play()).
+		/// </summary>
+		public TeaTime Restart()
+		{
+			// Alias
+			return this.Stop().Play();
+		}
+
+
+		// @
+		// DESTRUCTION
+
+
+		/// <summary>
+		/// Stops and cleans the queue, turning off all modes (Immutable,
+		/// Repeat, Consume, Backward, Yoyo). Just like new.
+		/// </summary>
+		public TeaTime Reset()
+		{
+			// Reset current
+			if (_currentCoroutine != null)
+				_instance.StopCoroutine(_currentCoroutine);
+
+			_tasks.Clear();
+			_currentTask = 0;
+			_executedCount = 0;
+
+			_isPlaying = false;
+			_isPaused = false;
+
+			// Modes off
+			_isImmutable = false;
+			_isRepeating = false;
+			_isConsuming = false;
+			_isYoyo = false;
+			this.Forward();
+
+
+			// Reset all TeaTimes on .Wait(
+			for (int i = 0, len = _waiting.Count; i < len; i++)
+				_waiting[i].Reset();
+			_waiting.Clear();
+
+
+			return this;
+		}
+
+
+		// @
+		// SPECIAL
+
+
+		/// <summary>
+		/// The queue will stop if the condition isn't fullfiled, or restarted
+		/// on Repeat mode.
+		/// </summary>
+		public TeaTime If(Func<bool> condition)
+		{
+			return this.Add(() =>
+			{
+				if (!condition())
+				{
+					if (_isRepeating)
+					{
+						this.Restart();
+					}
+					else
+					{
+						this.Stop();
+					}
+				}
+			});
+		}
+
+
+		/// <summary>
+		/// The queue will wait until the boolean condition is fullfiled.
+		/// </summary>
+		public TeaTime Wait(Func<bool> untilCondition, float checkDelay = 0)
+		{
+			return this.Loop((ttHandler t) =>
+			{
+				if (untilCondition()) t.EndLoop();
+				t.Wait(checkDelay);
+			});
+		}
+
+
+		// @
+		// CUSTOM YIELDS
+
+
+		/// <summary>
+		/// IEnumerator that waits the completion of a TeaTime.
+		/// </summary>
+		private IEnumerator WaitForCompletion(TeaTime tt)
+		{
+			while (!tt.IsCompleted) yield return null;
+		}
+
+		/// <summary>
+		/// Returns a YieldInstruction that waits until the queue is completed.
+		/// </summary>
+		public YieldInstruction WaitForCompletion()
+		{
+			// #todo Could this be cached somehow?
+			return _instance.StartCoroutine(WaitForCompletion(this));
+		}
+
+
+		// @
+		// THE COROUTINE
+
+
+		/// <summary>
+		/// This is the main algorithm. Executes all tasks, one after the
+		/// other, calling their callbacks according to type, time and queue
+		/// config.
+		/// </summary>
+		private IEnumerator ExecuteQueue()
+		{
+			_isPlaying = true;
+
+
+			int reverseLastTask = -1; // Important: This value needs to be reset to default on most queue changes
+			_lastPlayExecutedCount = 0;
+
+			while (_currentTask < _tasks.Count)
+			{
+				// Current task to be executed
+				int taskId = _currentTask;
+				if (_isReversed) taskId = _tasks.Count - 1 - _currentTask;
+				ttTask currentTask = _tasks[taskId];
+
+
+				// Next task (or previous if the queue is backward)
+				_currentTask++;
+
+				// Avoid executing a task twice when reversed and the queue
+				// hasn't reached the end
+				if (taskId == reverseLastTask) continue;
+				reverseLastTask = taskId;
+
+
+				// Let's wait
+				// 1 For secuencial Adds or Loops before their first execution
+				// 2 Maybe a callback is trying to modify his own queue
+				yield return ttYield.EndOfFrame;
+
+
+				// It's a loop
+				if (currentTask.isLoop)
+				{
+					// Holds the duration
+					float loopDuration = currentTask.time;
+
+					// Func<float> added
+					if (currentTask.timeByFunc != null)
+						loopDuration += currentTask.timeByFunc();
+
+					// Nothing to do, skip
+					if (loopDuration == 0)
+						continue;
+
+
+					// Loops will always need a handler
+					ttHandler loopHandler = new ttHandler();
+					loopHandler.self = this;
+					loopHandler.isLooping = true;
+					loopHandler.isReversed = _isReversed;
+
+
+					// Negative time means the loop is infinite
+					bool isInfinite = loopDuration < 0;
+
+					// T quotient
+					float tRate = isInfinite ? 0 : 1 / loopDuration;
+
+					// Progresion depends on current direction
+					if (loopHandler.isReversed)
+					{
+						loopHandler.t = 1f;
+						tRate = -tRate;
+					}
+
+					// While looping and, until time or infinite
+					while (loopHandler.isLooping && (loopHandler.isReversed ? loopHandler.t >= 0 : loopHandler.t <= 1))
+					{
+						// Check for queue reversal
+						if (_isReversed != loopHandler.isReversed)
+						{
+							tRate = -tRate;
+							loopHandler.isReversed = _isReversed;
+						}
+
+
+						float unityDeltaTime = Time.deltaTime;
+
+						// Completion% from 0 to 1
+						if (!isInfinite)
+							loopHandler.t += tRate * unityDeltaTime;
+
+						// On finite loops this .deltaTime is sincronized with
+						// the exact loop duration
+						loopHandler.deltaTime =
+							isInfinite
+							? unityDeltaTime
+							: 1 / (loopDuration - loopHandler.timeSinceStart) * unityDeltaTime;
+
+						// .deltaTime is also reversed
+						if (loopHandler.isReversed)
+							loopHandler.deltaTime = -loopHandler.deltaTime;
+
+						// A classic
+						loopHandler.timeSinceStart += unityDeltaTime;
+
+
+						// Pause?
+						while (_isPaused)
+							yield return null;
+
+
+						// Loops will always have a callback with a handler
+						currentTask.callbackWithHandler(loopHandler);
+
+
+						// Handler .WaitFor(
+						if (loopHandler.yieldsToWait != null)
+						{
+							for (int i = 0, len = loopHandler.yieldsToWait.Count; i < len; i++)
+								yield return loopHandler.yieldsToWait[i];
+
+							loopHandler.yieldsToWait.Clear();
+						}
+
+
+						// Minimum sane delay
+						if (loopHandler.yieldsToWait == null)
+							yield return null;
+					}
+
+
+					// Executed +1
+					_executedCount += 1;
+					_lastPlayExecutedCount += 1;
+				}
+				// It's a timed callback
+				else
+				{
+					// Holds the delay
+					float delayDuration = currentTask.time;
+
+					// Func<float> added
+					if (currentTask.timeByFunc != null)
+						delayDuration += currentTask.timeByFunc();
+
+					// Time delay
+					if (delayDuration > 0)
+						yield return ttYield.Seconds(delayDuration);
+
+
+					// Pause?
+					while (_isPaused)
+						yield return null;
+
+
+					// Normal callback
+					if (currentTask.callback != null)
+						currentTask.callback();
+
+
+					// Callback with handler
+					if (currentTask.callbackWithHandler != null)
+					{
+						ttHandler handler = new ttHandler();
+						handler.self = this;
+
+						handler.t = 1;
+						handler.timeSinceStart = delayDuration;
+						handler.deltaTime = Time.deltaTime;
+
+						currentTask.callbackWithHandler(handler);
+
+
+						// Handler WaitFor
+						if (handler.yieldsToWait != null)
+						{
+							for (int i = 0, len = handler.yieldsToWait.Count; i < len; i++)
+								yield return handler.yieldsToWait[i];
+
+							handler.yieldsToWait.Clear();
+						}
+
+
+						// Minimum sane delay
+						if (delayDuration <= 0 && handler.yieldsToWait == null)
+							yield return null;
+					}
+					else if (delayDuration <= 0)
+						yield return null;
+
+
+					// Executed +1
+					_executedCount += 1;
+					_lastPlayExecutedCount += 1;
+				}
+
+
+				// Consume mode removes the task after execution
+				// #todo Need to be tested with .Reverse() stuff
+				if (_isConsuming)
+				{
+					_currentTask -= 1;
+					_tasks.Remove(currentTask);
+
+					reverseLastTask = -1; // To default
+				}
+
+
+				// On Yoyo mode the queue is reversed at the end, only once per
+				// play without Repeat mode
+				if (_isYoyo && _currentTask >= _tasks.Count && (_lastPlayExecutedCount <= _tasks.Count || _isRepeating))
+				{
+					this.Reverse();
+
+					reverseLastTask = -1; // To default
+				}
+
+
+				// Repeats on Repeat mode
+				if (_isRepeating && _tasks.Count > 0 && _currentTask >= _tasks.Count)
+				{
+					_currentTask = 0;
+
+					reverseLastTask = -1; // To default
+				}
+
+
+				// Just at the end of a complete queue execution
+				if (_tasks.Count > 0 && _currentTask >= _tasks.Count)
+				{
+					// Forget current nested queues
+					_waiting.Clear();
+				}
+			}
+
+
+			// Done!
+			_isPlaying = false;
+
+
+			yield return null;
+		}
+	}
 }
+
+
+// <3
+// Lerp t Formulas
+
+
+// Ease out
+// t = Mathf.Sin(t * Mathf.PI * 0.5f);
+
+// Ease in
+// t = 1f - Mathf.Cos(t * Mathf.PI * 0.5f)
+
+// Exponential
+// t = t*t
+
+// Smoothstep
+// t = t*t * (3f - 2f*t)
+
+// Smootherstep
+// t = t*t*t * (t * (6f*t - 15f) + 10f)

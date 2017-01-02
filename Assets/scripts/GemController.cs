@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
-
+using matnesis.TeaTime;
 public class GemController : MonoBehaviour {
 
 	public GameObject gem;
@@ -14,19 +14,13 @@ public class GemController : MonoBehaviour {
 	
 	void MoveGemRoutine(){
 		
-		this.ttLoop (delegate(ttHandler rootHandler){
-			
-			this.ttSimpleLoop (2f, delegate(ttHandler handler) {
-				
-				//gem.renderer.material.color = Color.Lerp(Color.black, Color.white, handler.t);
+		this.tt().Loop (3f, delegate(ttHandler rootHandler){
 
-				gem.transform.Rotate (new Vector3 (0f, 100f * Time.deltaTime, 0f));
+            //gem.GetComponent<Renderer>().material.color = Color.Lerp(Color.black, Color.white, handler.t);
 
-				gem.transform.Rotate (new Vector3 (0f, 0f, 100f * Time.deltaTime));
-				
-			});
-			
-			rootHandler.WaitFor(1f);
+            gem.transform.Rotate(new Vector3(0f, 100f * Time.deltaTime, 0f));
+
+            gem.transform.Rotate(new Vector3(0f, 0f, 100f * Time.deltaTime));
 			
 		});
 		

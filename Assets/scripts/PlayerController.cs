@@ -1,64 +1,125 @@
 ﻿using UnityEngine;
 using System.Collections;
 using DG.Tweening;
+using matnesis.TeaTime;
 
-public class PlayerController : MonoBehaviour {
+public class PlayerController : MonoBehaviour
+{
 
-	public GameObject playerBody;
+    public GameObject playerBody;
 
-	public float speed = 0;
+    public float speed = 0;
 
-	public Vector3 lookDirection = Vector3.zero;
+    public Vector3 lookDirection = Vector3.zero;
 
-	public float jumpSpeed = 8.0F;
+    public float jumpSpeed = 8.0F;
 
-	public float gravity = 20.0F;
+    public float gravity = 20.0F;
 
-	public Vector3 moveDirection = Vector3.zero;
+    public Vector3 groundDirection = Vector3.zero;
 
-	// Use this for initialization
-	void Start () {
-	
-		MoveRoutine ();
+    //public Vector3 moveDirection = Vector3.zero;
 
-	}
-	
-	void MoveRoutine(){
+    private ValueWrapper<bool> jumpBoolWrapper = new ValueWrapper<bool>(false);
 
-		float xAxis = 0;
+    public ValueWrapper<Vector3> moveDirection = new ValueWrapper<Vector3>(Vector3.zero);
 
-		float yAxis = 0;
+    // Use this for initialization
+    void Start()
+    {
 
-		CharacterController controller = GetComponent<CharacterController>();
+        MoveRoutine();
 
-		this.ttLoop (delegate(ttHandler handler){
+    }
 
-			xAxis = Input.GetAxis("Horizontal");
-			
-			yAxis = Input.GetAxis("Vertical");
+    void MoveRoutine()
+    {
 
-			if (controller.isGrounded) {
+        float xAxis = 0;
 
-				moveDirection = new Vector3(xAxis, 0, yAxis);
+        float yAxis = 0;
 
-				playerBody.transform.LookAt( transform.position + moveDirection, Vector3.up);
+        CharacterController controller = GetComponent<CharacterController>();
 
-				moveDirection = Camera.main.transform.TransformDirection(moveDirection);
+        this.tt().Loop(delegate (ttHandler handler) {
 
-				moveDirection = new Vector3(moveDirection.x, 0, moveDirection.z);
+            xAxis = Input.GetAxis("Horizontal");
 
-				moveDirection *= speed;
+            yAxis = Input.GetAxis("Vertical");
 
-				if (Input.GetButton("Jump")){
-					moveDirection.y = jumpSpeed;
-				}
+            #region horizontal movement
 
-			}
+            groundDirection = new Vector3(xAxis, 0, yAxis);
 
-			moveDirection.y -= gravity * Time.deltaTime;
+            playerBody.transform.LookAt(transform.position + groundDirection, Vector3.up);
 
-			controller.Move(moveDirection * Time.deltaTime);
-		});
+            groundDirection = Camera.main.transform.TransformDirection(groundDirection);
 
-	}
+            groundDirection = new Vector3(groundDirection.x, 0, groundDirection.z);
+
+            groundDirection *= speed;
+
+            #endregion
+
+            #region Vertical movement
+
+            bool jump = Input.GetButton("Jump");
+
+            jumpBoolWrapper.Value = jump;
+            
+            if (controller.isGrounded)
+            {
+                moveDirection.Value = new Vector3(moveDirection.Value.x, 0f, moveDirection.Value.z);
+
+                if (jump)
+                {
+                    //moveDirection.y = jumpSpeed;
+
+                    print("llamando al mae");
+                    this.tt("buttonKeptPressedRoutine").Loop(1f, delegate (ttHandler jumpHandler)
+                    {
+
+                        if (jumpBoolWrapper.Value)
+                        {
+                            float newY = moveDirection.Value.y + Mathf.Lerp(jumpSpeed, 0f, jumpHandler.t);
+
+                            moveDirection.Value += new Vector3(moveDirection.Value.x, newY, moveDirection.Value.z);
+
+                            
+
+                            print("t == " + jumpHandler.t);
+                            //print("movedirection.y #$%" + moveDirection.y);
+
+                        }
+                        else
+                        {
+                            jumpHandler.EndLoop();
+                            
+                        }
+
+                        print(moveDirection.Value.y + " move direction y " + jumpHandler.t);
+
+                    }).Add(delegate() {
+
+                        print("se salio");
+
+                    }) ;
+                }
+            }
+
+            print("aca que llego ? " + moveDirection.Value.y); 
+         PORQUE ESTA MAE LLEGA DIFERENTE!
+            
+            //print("jump " + (jump ? "apretado":"suelto"));
+
+            moveDirection.Value -= new Vector3(0f, gravity * Time.deltaTime, 0f);
+
+            #endregion
+
+            moveDirection.Value = new Vector3(groundDirection.x, moveDirection.Value.y, groundDirection.z);
+
+            controller.Move(moveDirection.Value * Time.deltaTime);
+        });
+
+    }
 }

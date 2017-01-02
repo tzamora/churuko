@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using DG.Tweening;
+using matnesis.TeaTime;
 
 
 public class TestPlayerController : MonoBehaviour {
@@ -23,9 +24,9 @@ public class TestPlayerController : MonoBehaviour {
 
 	void Part1Routine(){
 
-		this.ttLoop (delegate(ttHandler rootHandler){
+		this.tt().Loop (delegate(ttHandler rootHandler){
 
-			this.ttSimpleLoop (5f, delegate(ttHandler handler) {
+			this.tt().Loop (5f, delegate(ttHandler handler) {
 				
 				//part1.renderer.material.color = Color.Lerp(Color.black, Color.white, Time.deltaTime);
 				
@@ -39,7 +40,7 @@ public class TestPlayerController : MonoBehaviour {
 				
 			});
 
-			rootHandler.WaitFor(1f);
+			rootHandler.Wait(1f);
 
 		});
 
@@ -47,13 +48,13 @@ public class TestPlayerController : MonoBehaviour {
 
 	void Part2Routine(){
 
-		this.ttLoop ("part2", 3f, delegate(ttHandler handler){
+		this.tt("part2").Loop (3f, delegate(ttHandler handler){
 			
-			part2.renderer.material.color = Color.Lerp(part2.renderer.material.color, Color.white, handler.t);
+			part2.GetComponent<Renderer>().material.color = Color.Lerp(part2.GetComponent<Renderer>().material.color, Color.white, handler.t);
 			
 			//part2.transform.position = Vector3.Lerp(part2.transform.position, new Vector3(part2.transform.position.x, -5f, 0f), handler.t);
 			
-			print ( "part2: " + part2.renderer.material.color );
+			print ( "part2: " + part2.GetComponent<Renderer>().material.color );
 			
 		});
 
@@ -61,9 +62,9 @@ public class TestPlayerController : MonoBehaviour {
 
 	void Part3Routine(){
 
-		this.ttLoop ("part3", 3f, delegate(ttHandler handler){
+		this.tt("part3").Loop (3f, delegate(ttHandler handler){
 			
-			part3.renderer.material.color = Color.Lerp(part3.renderer.material.color, Color.white, handler.deltaTime);
+			part3.GetComponent<Renderer>().material.color = Color.Lerp(part3.GetComponent<Renderer>().material.color, Color.white, handler.deltaTime);
 			
 			//part3.transform.position = Vector3.Lerp(part3.transform.position, new Vector3(part3.transform.position.x, -5f, 0f), handler.deltaTime);
 			
@@ -71,7 +72,7 @@ public class TestPlayerController : MonoBehaviour {
 			
 			//print ("loop deltaTime es: " + handler.deltaTime);
 			
-			print ( "part3: " + part3.renderer.material.color );
+			//print ( "part3: " + part3.renderer.material.color );
 			
 		});
 

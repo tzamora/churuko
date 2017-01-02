@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using matnesis.TeaTime;
 
 public class FlowerController : MonoBehaviour {
 
@@ -16,7 +17,7 @@ public class FlowerController : MonoBehaviour {
 
 	void MoveRoutine(){
 
-		this.ttLoop (delegate(ttHandler handlero) {
+		this.tt().Loop (delegate(ttHandler handlero) {
 
 			petalsPivot.transform.Rotate(new Vector3(0f, 0f, Time.deltaTime * speed ));
 

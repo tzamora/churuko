@@ -14,15 +14,15 @@ public class PlayerController : MonoBehaviour
 
     public float jumpSpeed = 8.0F;
 
+    public float jumpHoldTime = 0.25f;
+
     public float gravity = 20.0F;
 
     public Vector3 groundDirection = Vector3.zero;
 
-    //public Vector3 moveDirection = Vector3.zero;
+    public Vector3 moveDirection = Vector3.zero;
 
     private ValueWrapper<bool> jumpBoolWrapper = new ValueWrapper<bool>(false);
-
-    public ValueWrapper<Vector3> moveDirection = new ValueWrapper<Vector3>(Vector3.zero);
 
     // Use this for initialization
     void Start()
@@ -66,59 +66,38 @@ public class PlayerController : MonoBehaviour
             bool jump = Input.GetButton("Jump");
 
             jumpBoolWrapper.Value = jump;
-            
+
             if (controller.isGrounded)
             {
-                moveDirection.Value = new Vector3(moveDirection.Value.x, 0f, moveDirection.Value.z);
+                moveDirection.y = 0f;
 
                 if (jump)
                 {
-                    //moveDirection.y = jumpSpeed;
+                    moveDirection.y = jumpSpeed;
 
-                    print("llamando al mae");
-                    this.tt("buttonKeptPressedRoutine").Loop(1f, delegate (ttHandler jumpHandler)
+                    this.tt("buttonKeptPressedRoutine").Loop(jumpHoldTime, delegate (ttHandler jumpHandler)
                     {
-
                         if (jumpBoolWrapper.Value)
                         {
-                            float newY = moveDirection.Value.y + Mathf.Lerp(jumpSpeed, 0f, jumpHandler.t);
-
-                            moveDirection.Value += new Vector3(moveDirection.Value.x, newY, moveDirection.Value.z);
-
-                            
-
-                            print("t == " + jumpHandler.t);
-                            //print("movedirection.y #$%" + moveDirection.y);
+                            moveDirection.y += Mathf.Lerp(jumpSpeed, 0f, jumpHandler.t);
 
                         }
                         else
                         {
                             jumpHandler.EndLoop();
-                            
                         }
 
-                        print(moveDirection.Value.y + " move direction y " + jumpHandler.t);
-
-                    }).Add(delegate() {
-
-                        print("se salio");
-
-                    }) ;
+                    });
                 }
             }
-
-            print("aca que llego ? " + moveDirection.Value.y); 
-         PORQUE ESTA MAE LLEGA DIFERENTE!
             
-            //print("jump " + (jump ? "apretado":"suelto"));
-
-            moveDirection.Value -= new Vector3(0f, gravity * Time.deltaTime, 0f);
+            moveDirection.y -= gravity * Time.deltaTime;
 
             #endregion
 
-            moveDirection.Value = new Vector3(groundDirection.x, moveDirection.Value.y, groundDirection.z);
+            moveDirection = new Vector3(groundDirection.x, moveDirection.y, groundDirection.z);
 
-            controller.Move(moveDirection.Value * Time.deltaTime);
+            controller.Move(moveDirection * Time.deltaTime);
         });
 
     }

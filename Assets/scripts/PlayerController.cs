@@ -41,7 +41,7 @@ public class PlayerController : MonoBehaviour
 
         CharacterController controller = GetComponent<CharacterController>();
 
-        this.tt().Loop(delegate (ttHandler handler) {
+        this.tt().Loop(t => {
 
             xAxis = Input.GetAxis("Horizontal");
 
@@ -80,14 +80,13 @@ public class PlayerController : MonoBehaviour
                         if (jumpBoolWrapper.Value)
                         {
                             moveDirection.y += Mathf.Lerp(jumpSpeed, 0f, jumpHandler.t);
-
                         }
                         else
                         {
                             jumpHandler.EndLoop();
                         }
 
-                    });
+                    }).Immutable();
                 }
             }
             

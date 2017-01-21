@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class GameContext : MonoBehaviour {
+public class GameContext : MonoSingleton<GameContext> {
 
 	public GameObject player;
 

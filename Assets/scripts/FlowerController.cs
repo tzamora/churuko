@@ -17,11 +17,15 @@ public class FlowerController : MonoBehaviour {
 
 	void MoveRoutine(){
 
-		this.tt().Loop (delegate(ttHandler handlero) {
+		this.tt().Loop (0.5f, delegate(ttHandler handlero) {
 
-			petalsPivot.transform.Rotate(new Vector3(0f, 0f, Time.deltaTime * speed ));
+			petalsPivot.transform.Translate(Vector3.up * speed);
 
-		});
+		}).Loop (0.5f, delegate(ttHandler handlero) {
+
+			petalsPivot.transform.Translate(Vector3.down * speed);
+
+		}).Repeat();
 
 	}
 }

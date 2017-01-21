@@ -161,6 +161,8 @@ public class GrenadeController : MonoBehaviour {
 				}
 			}
 
+		}).Add(delegate() {
+			Destroy(gameObject);
 		}).Immutable();
 
 	}

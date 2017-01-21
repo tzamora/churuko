@@ -8,6 +8,9 @@ public class DoorController : MonoBehaviour {
 	public Transform OpenPosition;
 	public bool OpenDoor = false;
 	public float OpenTime = 3f;
+	public float EnergyBlocksToOpen = 5f;
+
+	public Camera doorCamera;
 
 
 	// Use this for initialization
@@ -22,10 +25,14 @@ public class DoorController : MonoBehaviour {
 
 		Vector3 startPos = transform.position;
 
-		this.tt ().Loop (OpenTime, handler => {
+		this.tt ().Add(delegate() {
+			doorCamera.enabled = true;
+		}).Loop (OpenTime, handler => {
 
 			transform.position = Vector3.Lerp(startPos, OpenPosition.position, handler.t);
 
+		}).Add(delegate() {
+			doorCamera.enabled = false;
 		});
 
 	}
@@ -35,7 +42,7 @@ public class DoorController : MonoBehaviour {
 
 		this.tt ().Loop (t => {
 
-			if (OpenDoor) {
+			if(GameContext.Get.EnergyBlocksDestroyed >= EnergyBlocksToOpen){
 				OpenDoorRoutine();
 			}
 

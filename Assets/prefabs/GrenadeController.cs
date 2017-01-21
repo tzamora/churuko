@@ -112,15 +112,25 @@ public class GrenadeController : MonoBehaviour {
 		
 			foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius)) {
 
-				// calculate direction from target to me
-				Vector3 forceDirection = transform.position - collider.transform.position;
+				var energyBlock = collider.GetComponent<EnergyBlockController>();
 
-				// apply force on target towards me
-				var rigidBody = collider.GetComponent<Rigidbody>();
+				if(energyBlock){
+				
+					energyBlock.enabled = false;
 
-				if (rigidBody) {
+					// calculate direction from target to me
+					Vector3 forceDirection = transform.position - collider.transform.position;
 
-					rigidBody.AddForce(forceDirection.normalized * pullForce * Time.fixedDeltaTime);
+					// apply force on target towards me
+					var rigidBody = collider.GetComponent<Rigidbody>();
+
+					if (rigidBody) {
+
+						rigidBody.isKinematic = false;
+
+						rigidBody.AddForce(forceDirection.normalized * pullForce * Time.fixedDeltaTime);
+					}
+
 				}
 			}
 
@@ -132,18 +142,27 @@ public class GrenadeController : MonoBehaviour {
 
 			foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius)) {
 
-				// calculate direction from target to me
-				Vector3 forceDirection = collider.transform.position - transform.position;
+				var energyBlock = collider.GetComponent<EnergyBlockController>();
 
-				// apply force on target towards me
-				var rigidBody = collider.GetComponent<Rigidbody>();
+				if(energyBlock){
 
-				if (rigidBody) {
+					energyBlock.PrepareToDestruction();
 
-					rigidBody.AddForce(forceDirection.normalized * pullForce * Time.fixedDeltaTime);
+					// calculate direction from target to me
+					Vector3 forceDirection = collider.transform.position - transform.position;
+
+					// apply force on target towards me
+					var rigidBody = collider.GetComponent<Rigidbody>();
+
+					if (rigidBody) {
+
+						rigidBody.AddForce(forceDirection.normalized * pullForce * Time.fixedDeltaTime);
+					}	
 				}
 			}
 
+		}).Add(delegate() {
+			Destroy(gameObject);
 		}).Immutable();
 
 	}

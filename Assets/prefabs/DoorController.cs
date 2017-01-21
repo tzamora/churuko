@@ -33,8 +33,6 @@ public class DoorController : MonoBehaviour {
 	// Update is called once per frame
 	void DoorStatusCheck () {
 
-		Vector3 startPos = transform.position;
-
 		this.tt ().Loop (t => {
 
 			if (OpenDoor) {

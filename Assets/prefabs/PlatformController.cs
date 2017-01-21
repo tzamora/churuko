@@ -7,9 +7,14 @@ public class PlatformController : MonoBehaviour {
 
 	public Transform FinalPosition;
 	public float MovingTime = 3f;
+	public ColliderController PlatformCollider;
 
 	// Use this for initialization
 	void Start () {
+
+		PlatformCollider.TriggerEnter += PlatformCollider_TriggerEnter;
+
+		PlatformCollider.TriggerExit += PlatformCollider_TriggerExit;
 
 		MoveRoutine ();
 
@@ -29,6 +34,22 @@ public class PlatformController : MonoBehaviour {
 			transform.position = Vector3.Lerp (FinalPosition.position, startPos, handler.t);
 
 		}).Repeat ();
+
+	}
+
+	private void PlatformCollider_TriggerEnter(Collider other){
+
+		if (other.GetComponent<PlayerController>() != null){
+			GameContext.Get.player.transform.parent = transform;
+		}
+			
+	}
+
+	private void PlatformCollider_TriggerExit(Collider other){
+
+		if (other.GetComponent<PlayerController>() != null){
+			GameContext.Get.player.transform.parent = null;
+		}
 
 	}
 }

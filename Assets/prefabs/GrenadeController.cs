@@ -10,12 +10,16 @@ public class GrenadeController : MonoBehaviour {
 	public GameObject grenadeBody;
 	public GameObject explosionSphere;
 
+	private Vector3 sphereDefaultSize;
+
 	// Use this for initialization
 	void Start () {
 
 		Destroy (explosionSphere.GetComponent<Rigidbody>());
 
 		ActivateGrenade ();
+
+		sphereDefaultSize = explosionSphere.transform.localScale;
 
 	}
 
@@ -70,6 +74,30 @@ public class GrenadeController : MonoBehaviour {
 
 	}
 
+	public void ExplosionSphereRoutine(){
+
+		var currentSize = explosionSphere.transform.localScale;
+
+		var sphereRenderer = explosionSphere.GetComponent<Renderer> ();
+
+		var currentColor = sphereRenderer.material.color;
+
+		this.tt ().Loop (0.2f, t=>{
+
+			//
+			// change sphere size
+			//
+
+			sphereRenderer.material.color = Color.Lerp(currentColor, new Color(0f, 0f, 0f, 0f), t.t);
+
+			explosionSphere.transform.localScale = Vector3.Lerp(Vector3.zero, sphereDefaultSize, t.t);
+
+		}).Add(delegate() {
+			Destroy(explosionSphere.gameObject);
+		});
+
+	}
+
 	public void ActivateGrenade(){
 
 		this.tt ().Add(2f).Add (ttHandler => {
@@ -96,7 +124,27 @@ public class GrenadeController : MonoBehaviour {
 				}
 			}
 
-		});
+		}).Add(delegate() {
+			
+			ExplosionSphereRoutine();
+
+		}).Loop(0.25f, t=>{
+
+			foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius)) {
+
+				// calculate direction from target to me
+				Vector3 forceDirection = collider.transform.position - transform.position;
+
+				// apply force on target towards me
+				var rigidBody = collider.GetComponent<Rigidbody>();
+
+				if (rigidBody) {
+
+					rigidBody.AddForce(forceDirection.normalized * pullForce * Time.fixedDeltaTime);
+				}
+			}
+
+		}).Immutable();
 
 	}
 

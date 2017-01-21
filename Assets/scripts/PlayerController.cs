@@ -24,13 +24,43 @@ public class PlayerController : MonoBehaviour
 
     private ValueWrapper<bool> jumpBoolWrapper = new ValueWrapper<bool>(false);
 
+	public GameObject grenadePrefab;
+
+	public float grenadeThrowforce = 100f;
+
+	public Transform throwPivot;
+
     // Use this for initialization
     void Start()
     {
 
         MoveRoutine();
 
+		ThrowGrenadeRoutine();
+
     }
+
+	void ThrowGrenadeRoutine(){
+
+		this.tt ().Loop (t => {
+
+			if(Input.GetButtonDown("Fire1")){
+
+				//
+				// instantiate the granade
+				//
+
+				GameObject grenade = Instantiate (grenadePrefab, throwPivot.position, Quaternion.identity);
+
+				Vector3 throwDirection = -throwPivot.forward + new Vector3(0f, 1f, 0f);
+
+				grenade.GetComponent<Rigidbody>().AddForce((throwDirection * grenadeThrowforce));
+
+			}
+
+		}).Immutable();
+
+	}
 
     void MoveRoutine()
     {

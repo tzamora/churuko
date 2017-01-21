@@ -29,11 +29,11 @@ public class PlatformController : MonoBehaviour {
 
 			transform.position = Vector3.Lerp (startPos, FinalPosition.position, handler.t);
 
-		}).Loop (MovingTime, handler => {
+		}).Add(1f).Loop (MovingTime, handler => {
 
 			transform.position = Vector3.Lerp (FinalPosition.position, startPos, handler.t);
 
-		}).Repeat ();
+		}).Add(1f).Repeat ();
 
 	}
 

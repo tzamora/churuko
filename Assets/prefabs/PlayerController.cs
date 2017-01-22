@@ -107,8 +107,6 @@ public class PlayerController : MonoBehaviour
 			{
 				SoundManager.Get.PlayClip (JumpSound, false);
 
-				print("sonido");
-
 				moveDirection.y = jumpSpeed;
 
 				this.tt("buttonKeptPressedRoutine").Loop(jumpHoldTime, delegate (ttHandler jumpHandler)

@@ -11,7 +11,17 @@ public class GameContext : MonoSingleton<GameContext> {
 
 	public AudioClip ExplosionSound;
 
+	public AudioClip BackgroundSound;
+
 	public int EnergyBlocksDestroyed = 0;
+
+
+	void Start()
+	{
+		
+		SoundManager.Get.PlayClip (BackgroundSound, true);
+	
+	}
 
 	public void CameraShakeRoutine(){
 

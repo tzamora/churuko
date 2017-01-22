@@ -15,6 +15,8 @@ public class DieMenuPanelController : MonoBehaviour {
 
 		restartButton.onClick.AddListener (()=>{
 
+			print("pero que putas");
+
 			Scene scene = SceneManager.GetActiveScene();
 
 			SceneManager.LoadScene(scene.name);
@@ -27,10 +29,5 @@ public class DieMenuPanelController : MonoBehaviour {
 
 		});
 
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
 	}
 }

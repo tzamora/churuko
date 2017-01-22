@@ -76,11 +76,17 @@ public class GrenadeController : MonoBehaviour {
 
 	public void ExplosionSphereRoutine(){
 
+		//
+		//
+		//
+
 		var currentSize = explosionSphere.transform.localScale;
 
 		var sphereRenderer = explosionSphere.GetComponent<Renderer> ();
 
 		var currentColor = sphereRenderer.material.color;
+
+		GameContext.Get.CameraShakeRoutine ();
 
 		this.tt ().Loop (0.2f, t=>{
 
@@ -91,6 +97,43 @@ public class GrenadeController : MonoBehaviour {
 			sphereRenderer.material.color = Color.Lerp(currentColor, new Color(0f, 0f, 0f, 0f), t.t);
 
 			explosionSphere.transform.localScale = Vector3.Lerp(Vector3.zero, sphereDefaultSize, t.t);
+
+		}).Add(()=>{
+
+			foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius)) {
+
+				//
+				//
+				//
+
+				GameObject objectToDestroy = null;
+
+				PlayerController player = collider.GetComponent<PlayerController>();
+
+				EnemyController enemy = collider.GetComponent<EnemyController>();
+
+				if(player) objectToDestroy = player.gameObject;
+
+				if(enemy) objectToDestroy = enemy.gameObject;
+
+				if(objectToDestroy){
+
+					// calculate direction from target to me
+					Vector3 forceDirection = objectToDestroy.transform.position - transform.position;
+
+					// apply force on target towards me
+					var impactReceiver = objectToDestroy.GetComponent<ImpactReceiver>();
+
+					if (impactReceiver) {
+
+						impactReceiver.AddImpact(forceDirection.normalized, pullForce);
+					}
+
+					if(player) player.Kill();
+
+					if(enemy) enemy.Kill();
+				}
+			}
 
 		}).Add(delegate() {
 			Destroy(explosionSphere.gameObject);
@@ -128,7 +171,7 @@ public class GrenadeController : MonoBehaviour {
 
 						rigidBody.isKinematic = false;
 
-						rigidBody.AddForce(forceDirection.normalized * pullForce * Time.fixedDeltaTime);
+						rigidBody.AddForce(forceDirection.normalized * 1000 * Time.fixedDeltaTime);
 					}
 
 				}
@@ -156,10 +199,43 @@ public class GrenadeController : MonoBehaviour {
 
 					if (rigidBody) {
 
-						rigidBody.AddForce(forceDirection.normalized * pullForce * Time.fixedDeltaTime);
+						rigidBody.AddForce(forceDirection.normalized * 1000f * Time.fixedDeltaTime);
 					}	
 				}
 			}
+				//
+				//
+				//
+
+//				GameObject objectToDestroy = null;
+//
+//				PlayerController player = collider.GetComponent<PlayerController>();
+//
+//				EnemyController enemy = collider.GetComponent<EnemyController>();
+//
+//				if(player) objectToDestroy = player.gameObject;
+//
+//				if(enemy) objectToDestroy = enemy.gameObject;
+//
+//				if(objectToDestroy){
+//
+//					// calculate direction from target to me
+//					Vector3 forceDirection = objectToDestroy.transform.position - transform.position;
+//
+//					// apply force on target towards me
+//					var impactReceiver = objectToDestroy.GetComponent<ImpactReceiver>();
+//
+//					if (impactReceiver) {
+//
+//						impactReceiver.AddImpact(forceDirection.normalized, pullForce);
+//					}
+//
+//					if(player) player.Kill();
+//
+//					if(enemy) enemy.Kill();
+//
+//				}
+//			}
 
 		}).Add(delegate() {
 			Destroy(gameObject);

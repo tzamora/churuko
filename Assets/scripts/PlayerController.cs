@@ -143,7 +143,6 @@ public class PlayerController : MonoBehaviour
 			Camera.main.transform.parent = null;
 
 			GameContext.Get.tt("ShowMenu").Add (1f, delegate() {
-				print("vamos a ver que pasa");
 				GameContext.Get.DieMenuPanel.SetActive(true);
 			}).Immutable();
 

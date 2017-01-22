@@ -32,8 +32,7 @@ public class DoorController : MonoBehaviour {
 			transform.position = Vector3.Lerp(startPos, OpenPosition.position, handler.t);
 
 		}).Add(delegate() {
-			doorCamera.enabled = false;
-		});
+			doorCamera.enabled = false;	});
 
 	}
 
@@ -44,6 +43,7 @@ public class DoorController : MonoBehaviour {
 
 			if(GameContext.Get.EnergyBlocksDestroyed >= EnergyBlocksToOpen){
 				OpenDoorRoutine();
+				t.EndLoop ();
 			}
 
 		});

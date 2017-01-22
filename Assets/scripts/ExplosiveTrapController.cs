@@ -40,7 +40,7 @@ public class ExplosiveTrapController : MonoBehaviour
 
 		var currentColor = sphereRenderer.material.color;
 
-		GameContext.Get.CameraShakeRoutine ();
+		GameContext.Get.CameraShakeRoutine (pipeBody.GetComponent<Renderer>().isVisible);
 
 		this.tt ().Loop (0.3f, t=>{
 

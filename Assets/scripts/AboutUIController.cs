@@ -9,9 +9,9 @@ public class AboutUIController : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 
-		backButton.onClick.AddListener(delegate() {
-			Application.LoadLevel("StartScene");
-		});
+		//backButton.onClick.AddListener(delegate() {
+		//	Application.LoadLevel("StartScene");
+		//});
 
 	}
 }

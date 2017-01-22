@@ -5,8 +5,7 @@ using matnesis.TeaTime;
 
 public class EnemyController : MonoBehaviour
 {
-
-    public GameObject enemyBody;
+	public GameObject enemyBody;
 
 	public CharacterController controller;
 
@@ -40,88 +39,30 @@ public class EnemyController : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-		//derecha
-		//moveDirection = new Vector3(100f, 0, 0);
-
-		/*
-		//Vector3 posPlayer = new Vector3(GameContext.Get.player.transform.position,0,0);
-		moveDirection = Vector3.Lerp(transform.position, GameContext.Get.player.transform.position, 3);
-		*/
-
-		/*
-		//arriba
-		moveDirection = new Vector3(0, 0, 100f);
-		//izquierda
-		moveDirection = new Vector3(-100f, 0, 0);
-		//abajo
-		moveDirection = new Vector3(0, 0, -100f);
-
-		controller.Move(moveDirection * Time.deltaTime);
-		*/
-
 		MoveRoutine();
 
-		//ThrowGrenadeRoutine();
+		ThrowGrenadeRoutine ();
     }
 
-	void Update(){
+	void ThrowGrenadeRoutine(){
 
-		/*
-		xAxis = GameContext.Get.player.transform.position.x - transform.position.x;
+		this.tt ().Add (1f, t => {
 
-		yAxis = GameContext.Get.player.transform.position.y - transform.position.x;
 
-		#region horizontal movement
+			    //
+				// instantiate the granade
+				//
 
-		groundDirection = new Vector3(xAxis, 0, yAxis);
+			GameObject grenade = Instantiate (grenadePrefab, throwPivot.position, Quaternion.identity);
 
-		enemyBody.transform.LookAt(transform.position + groundDirection, Vector3.up);
+			//Vector3 throwDirection = -throwPivot.forward + new Vector3(0f, 1f, 0f);
 
-		groundDirection = Camera.main.transform.TransformDirection(groundDirection);
+			Vector3 throwDirection = enemyBody.transform.forward + Vector3.up;
 
-		groundDirection = new Vector3(groundDirection.x, 0, groundDirection.z);
+			grenade.GetComponent<Rigidbody>().AddForce(throwDirection * grenadeThrowforce);
 
-		groundDirection *= speed;
 
-		#endregion
-
-		#region Vertical movement
-
-		bool jump = Input.GetButton("Jump");
-
-		jumpBoolWrapper.Value = jump;
-
-		if (controller.isGrounded)
-		{
-			moveDirection.y = 0f;
-
-			if (jump)
-			{
-				moveDirection.y = jumpSpeed;
-
-				this.tt("buttonKeptPressedRoutine").Loop(jumpHoldTime, delegate (ttHandler jumpHandler)
-					{
-						if (jumpBoolWrapper.Value)
-						{
-							moveDirection.y += Mathf.Lerp(jumpSpeed, 0f, jumpHandler.t);
-						}
-						else
-						{
-							jumpHandler.EndLoop();
-						}
-
-					}).Immutable();
-			}
-		}
-
-		moveDirection.y -= gravity * Time.deltaTime;
-
-		#endregion
-
-		moveDirection = new Vector3(groundDirection.x, moveDirection.y, groundDirection.z);
-
-		controller.Move(moveDirection * Time.deltaTime);
-		*/
+		}).Repeat().Immutable();
 
 	}
 

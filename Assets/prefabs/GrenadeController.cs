@@ -100,11 +100,11 @@ public class GrenadeController : MonoBehaviour {
 
 	public void ActivateGrenade(){
 
-		this.tt ().Add(2f).Add (ttHandler => {
+		this.tt ().Add(1f).Add (ttHandler => {
 
 			ChangeColorRoutine();
 
-		}).Add(3, t=>{
+		}).Add(1f, t=>{
 
 			ImplosionSphereRoutine();
 

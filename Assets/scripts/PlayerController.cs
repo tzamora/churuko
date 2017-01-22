@@ -2,6 +2,7 @@
 using System.Collections;
 using DG.Tweening;
 using matnesis.TeaTime;
+using Exploder.Utils;
 
 public class PlayerController : MonoBehaviour
 {
@@ -134,4 +135,21 @@ public class PlayerController : MonoBehaviour
         });
 
     }
+
+	public void Kill(){
+	
+		this.tt ("killPlayer").Add (0.15f, delegate() {
+
+			Camera.main.transform.parent = null;
+
+			GameContext.Get.tt("ShowMenu").Add (1f, delegate() {
+				print("vamos a ver que pasa");
+				GameContext.Get.DieMenuPanel.SetActive(true);
+			}).Immutable();
+
+			ExploderSingleton.ExploderInstance.ExplodeObject (gameObject);
+
+		});
+
+	}
 }

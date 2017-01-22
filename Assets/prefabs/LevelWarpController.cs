@@ -19,9 +19,13 @@ public class LevelWarpController : MonoBehaviour {
 
 		levelNumberText.text = "" + levelNumber;
 
-		warpTrigger.TriggerEnter += (Collider obj) => {
+		warpTrigger.TriggerEnter += (Collider collider) => {
 
-			SceneManager.LoadScene (levelName);
+			if(collider.GetComponent<PlayerController>()){
+			
+				SceneManager.LoadScene (levelName);
+
+			}
 
 		};
 

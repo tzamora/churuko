@@ -7,14 +7,19 @@ public class GameContext : MonoSingleton<GameContext> {
 
 	public GameObject player;
 
+	public GameObject playerPrefab;
+
 	public GameObject DieMenuPanel;
 
 	public AudioClip ExplosionSound;
 
 	public AudioClip BackgroundSound;
 
+	public AudioClip ReactorSound;
+
 	public int EnergyBlocksDestroyed = 0;
 
+	public Transform startingPosition;
 
 	void Start()
 	{
@@ -55,5 +60,16 @@ public class GameContext : MonoSingleton<GameContext> {
 
 		});
 
+	}
+
+	public void resetLevel(){
+	
+		Destroy (Camera.main.gameObject);
+
+		GameObject player = Instantiate(playerPrefab, GameContext.Get.startingPosition.position, Quaternion.identity);
+
+		//SceneManager.LoadScene(scene.name);
+		GameContext.Get.player = player;
+	
 	}
 }

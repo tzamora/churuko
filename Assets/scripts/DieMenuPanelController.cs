@@ -15,17 +15,18 @@ public class DieMenuPanelController : MonoBehaviour {
 
 		restartButton.onClick.AddListener (()=>{
 
-			print("pero que putas");
+			//Scene scene = SceneManager.GetActiveScene();
 
-			Scene scene = SceneManager.GetActiveScene();
+			GameContext.Get.resetLevel();
 
-			SceneManager.LoadScene(scene.name);
+			GameContext.Get.DieMenuPanel.SetActive(false);
+
 
 		});
 
 		menuButton.onClick.AddListener (()=>{
 
-
+			SceneManager.LoadScene("Intro");
 
 		});
 

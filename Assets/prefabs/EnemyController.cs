@@ -8,15 +8,13 @@ public class EnemyController : MonoBehaviour
 
     public GameObject enemyBody;
 
-	//public CharacterController controller;
+	public CharacterController controller;
 
-	/*
     public float jumpSpeed = 8.0F;
 
     public float jumpHoldTime = 0.25f;
 
     public float gravity = 20.0F;
-	*/
 
 	public float speed = 0;
 
@@ -30,7 +28,6 @@ public class EnemyController : MonoBehaviour
 
     public Vector3 moveDirection = Vector3.zero;
 
-    /*
     private ValueWrapper<bool> jumpBoolWrapper = new ValueWrapper<bool>(false);
 
 	public GameObject grenadePrefab;
@@ -38,12 +35,31 @@ public class EnemyController : MonoBehaviour
 	public float grenadeThrowforce = 100f;
 
 	public Transform throwPivot;
-	*/
+
 
     // Use this for initialization
     void Start()
     {
-        MoveRoutine();
+		//derecha
+		//moveDirection = new Vector3(100f, 0, 0);
+
+		/*
+		//Vector3 posPlayer = new Vector3(GameContext.Get.player.transform.position,0,0);
+		moveDirection = Vector3.Lerp(transform.position, GameContext.Get.player.transform.position, 3);
+		*/
+
+		/*
+		//arriba
+		moveDirection = new Vector3(0, 0, 100f);
+		//izquierda
+		moveDirection = new Vector3(-100f, 0, 0);
+		//abajo
+		moveDirection = new Vector3(0, 0, -100f);
+
+		controller.Move(moveDirection * Time.deltaTime);
+		*/
+
+		MoveRoutine();
 
 		//ThrowGrenadeRoutine();
     }
@@ -114,24 +130,61 @@ public class EnemyController : MonoBehaviour
 
         this.tt().Loop(t => {
 
-			xAxis = GameContext.Get.player.transform.position.x - transform.position.x;
+			xAxis = 0;//GameContext.Get.player.transform.position.x;
 
-			yAxis = GameContext.Get.player.transform.position.y - transform.position.x;
+			yAxis = 0;//GameContext.Get.player.transform.position.y;
 
 			#region horizontal movement
 
-			groundDirection = new Vector3(xAxis, 0, yAxis);
+			groundDirection = new Vector3(xAxis, yAxis, 0);
 
-			enemyBody.transform.LookAt(transform.position + groundDirection, Vector3.up);
+			enemyBody.transform.LookAt(GameContext.Get.player.transform.position, Vector3.up);
 
-			groundDirection = Camera.main.transform.TransformDirection(groundDirection);
-
-			groundDirection = new Vector3(groundDirection.x, 0, groundDirection.z);
+			//groundDirection = new Vector3(groundDirection.x, 0, groundDirection.z);
 
 			groundDirection *= speed;
 
 			#endregion
-            
+			#region Vertical movement
+
+			bool jump = false; //Input.GetButton("Jump");
+
+			jumpBoolWrapper.Value = jump;
+
+			if (controller.isGrounded)
+			{
+				moveDirection.y = 0f;
+
+				if (jump)
+				{
+					moveDirection.y = jumpSpeed;
+
+					this.tt("buttonKeptPressedRoutine").Loop(jumpHoldTime, delegate (ttHandler jumpHandler)
+						{
+							if (jumpBoolWrapper.Value)
+							{
+								moveDirection.y += Mathf.Lerp(jumpSpeed, 0f, jumpHandler.t);
+							}
+							else
+							{
+								jumpHandler.EndLoop();
+							}
+
+						}).Immutable();
+				}
+			}
+
+			moveDirection.y -= gravity * Time.deltaTime;
+
+			#endregion
+
+			//moveDirection = new Vector3(groundDirection.x, moveDirection.y, groundDirection.z);
+
+			moveDirection = new Vector3(groundDirection.x, moveDirection.y, groundDirection.z);
+
+			controller.Move(moveDirection * Time.deltaTime);
+
+			transform.position = Vector3.Lerp(transform.position, GameContext.Get.player.transform.position, Time.deltaTime/2f);
         });
 
     }

@@ -128,8 +128,6 @@ public class PlayerController : MonoBehaviour
     void MoveRoutine()
     {
 
-        
-
         this.tt().Loop(t => {
 
             

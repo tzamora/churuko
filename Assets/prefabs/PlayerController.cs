@@ -9,6 +9,10 @@ public class PlayerController : MonoBehaviour
 
     public GameObject playerBody;
 
+	public AudioClip JumpSound;
+
+	public AudioClip ThrowGrenadeSound;
+
     public float speed = 0;
 
     public Vector3 lookDirection = Vector3.zero;
@@ -55,6 +59,8 @@ public class PlayerController : MonoBehaviour
 				// instantiate the granade
 				//
 
+				SoundManager.Get.PlayClip (ThrowGrenadeSound, false);
+
 				GameObject grenade = Instantiate (grenadePrefab, throwPivot.position, Quaternion.identity);
 
 				Vector3 throwDirection = -throwPivot.forward + new Vector3(0f, 1f, 0f);
@@ -99,6 +105,10 @@ public class PlayerController : MonoBehaviour
 
 			if (jump)
 			{
+				SoundManager.Get.PlayClip (JumpSound, false);
+
+				print("sonido");
+
 				moveDirection.y = jumpSpeed;
 
 				this.tt("buttonKeptPressedRoutine").Loop(jumpHoldTime, delegate (ttHandler jumpHandler)

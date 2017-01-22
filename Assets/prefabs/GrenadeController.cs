@@ -9,8 +9,10 @@ public class GrenadeController : MonoBehaviour {
 	public float pullForce = 1;
 	public GameObject grenadeBody;
 	public GameObject explosionSphere;
-
 	private Vector3 sphereDefaultSize;
+	public AudioClip GrenadeHitGroundSound;
+	public AudioClip GrenadeChargingSound;
+	public AudioClip ImplosionSound;
 
 	// Use this for initialization
 	void Start () {
@@ -24,7 +26,7 @@ public class GrenadeController : MonoBehaviour {
 	}
 
 	public void ChangeColorRoutine(){
-	
+
 		Renderer grenadeRenderer = grenadeBody.GetComponent<Renderer> ();
 
 		Color defaultColor = grenadeRenderer.material.color;
@@ -143,11 +145,19 @@ public class GrenadeController : MonoBehaviour {
 
 	public void ActivateGrenade(){
 
-		this.tt ().Add(1f).Add (ttHandler => {
+		this.tt ().Add(0.5f).Add (ttHandler => {
+
+			SoundManager.Get.PlayClip (GrenadeHitGroundSound, false);
+
+		}).Add(1f).Add (ttHandler => {
+
+			SoundManager.Get.PlayClip (GrenadeChargingSound, false);
 
 			ChangeColorRoutine();
 
 		}).Add(1f, t=>{
+
+			SoundManager.Get.PlayClip (ImplosionSound, false);
 
 			ImplosionSphereRoutine();
 

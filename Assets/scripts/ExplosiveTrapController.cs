@@ -50,7 +50,7 @@ public class ExplosiveTrapController : MonoBehaviour
 
 			sphereRenderer.material.color = Color.Lerp(currentColor, new Color(0f, 0f, 0f, 0f), t.t);
 
-			explosionSphere.transform.localScale = Vector3.Lerp(Vector3.zero, sphereDefaultSize, t.t);
+			explosionSphere.transform.localScale = Vector3.Lerp(Vector3.zero, new Vector3(10f, 10f, 10f), t.t);
 
 		}).Add(delegate() {
 			explosionSphere.transform.localScale = Vector3.zero;

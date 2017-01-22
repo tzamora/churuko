@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 6b73222334b7945c9b6e7f8bf2b281cf
+timeCreated: 1485105469
+licenseType: Free
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - playerBody: {instanceID: 0}
+  - JumpSound: {instanceID: 0}
+  - ThrowGrenadeSound: {instanceID: 0}
+  - grenadePrefab: {instanceID: 0}
+  - throwPivot: {instanceID: 0}
+  - controller: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -14,9 +14,7 @@ public class GemController : MonoBehaviour {
 	
 	void MoveGemRoutine(){
 		
-		this.tt().Loop (3f, delegate(ttHandler rootHandler){
-
-            //gem.GetComponent<Renderer>().material.color = Color.Lerp(Color.black, Color.white, handler.t);
+		this.tt().Loop (delegate(ttHandler rootHandler){
 
             gem.transform.Rotate(new Vector3(0f, 100f * Time.deltaTime, 0f));
 

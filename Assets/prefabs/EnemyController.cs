@@ -8,6 +8,8 @@ public class EnemyController : MonoBehaviour
 {
 	public GameObject enemyBody;
 
+	public Renderer bodyRender; 
+
 	public CharacterController controller;
 
     public float jumpSpeed = 8.0F;
@@ -69,7 +71,9 @@ public class EnemyController : MonoBehaviour
     void MoveRoutine()
     {
 
-        this.tt().Loop(t => {
+		this.tt().Loop(t => {
+
+			if(!bodyRender.isVisible) return;
 
 			xAxis = 0;//GameContext.Get.player.transform.position.x;
 

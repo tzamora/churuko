@@ -28,7 +28,10 @@ public class GameContext : MonoSingleton<GameContext> {
 	
 	}
 
-	public void CameraShakeRoutine(){
+	public void CameraShakeRoutine(bool isVisible){
+
+		if (!isVisible)
+			return;
 
 		var currentCameraPosition = Camera.main.transform.position;
 

@@ -76,11 +76,17 @@ public class GrenadeController : MonoBehaviour {
 
 	public void ExplosionSphereRoutine(){
 
+		//
+		//
+		//
+
 		var currentSize = explosionSphere.transform.localScale;
 
 		var sphereRenderer = explosionSphere.GetComponent<Renderer> ();
 
 		var currentColor = sphereRenderer.material.color;
+
+		GameContext.Get.CameraShakeRoutine ();
 
 		this.tt ().Loop (0.2f, t=>{
 
@@ -92,6 +98,43 @@ public class GrenadeController : MonoBehaviour {
 
 			explosionSphere.transform.localScale = Vector3.Lerp(Vector3.zero, sphereDefaultSize, t.t);
 
+		}).Add(()=>{
+
+			foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius)) {
+
+				//
+				//
+				//
+
+				GameObject objectToDestroy = null;
+
+				PlayerController player = collider.GetComponent<PlayerController>();
+
+				EnemyController enemy = collider.GetComponent<EnemyController>();
+
+				if(player) objectToDestroy = player.gameObject;
+
+				if(enemy) objectToDestroy = enemy.gameObject;
+
+				if(objectToDestroy){
+
+					// calculate direction from target to me
+					Vector3 forceDirection = objectToDestroy.transform.position - transform.position;
+
+					// apply force on target towards me
+					var impactReceiver = objectToDestroy.GetComponent<ImpactReceiver>();
+
+					if (impactReceiver) {
+
+						impactReceiver.AddImpact(forceDirection.normalized, pullForce);
+					}
+
+					if(player) player.Kill();
+
+					if(enemy) enemy.Kill();
+				}
+			}
+
 		}).Add(delegate() {
 			Destroy(explosionSphere.gameObject);
 		});
@@ -100,11 +143,11 @@ public class GrenadeController : MonoBehaviour {
 
 	public void ActivateGrenade(){
 
-		this.tt ().Add(2f).Add (ttHandler => {
+		this.tt ().Add(1f).Add (ttHandler => {
 
 			ChangeColorRoutine();
 
-		}).Add(3, t=>{
+		}).Add(1f, t=>{
 
 			ImplosionSphereRoutine();
 
@@ -128,7 +171,7 @@ public class GrenadeController : MonoBehaviour {
 
 						rigidBody.isKinematic = false;
 
-						rigidBody.AddForce(forceDirection.normalized * pullForce * Time.fixedDeltaTime);
+						rigidBody.AddForce(forceDirection.normalized * 1000 * Time.fixedDeltaTime);
 					}
 
 				}
@@ -156,10 +199,43 @@ public class GrenadeController : MonoBehaviour {
 
 					if (rigidBody) {
 
-						rigidBody.AddForce(forceDirection.normalized * pullForce * Time.fixedDeltaTime);
+						rigidBody.AddForce(forceDirection.normalized * 1000f * Time.fixedDeltaTime);
 					}	
 				}
 			}
+				//
+				//
+				//
+
+//				GameObject objectToDestroy = null;
+//
+//				PlayerController player = collider.GetComponent<PlayerController>();
+//
+//				EnemyController enemy = collider.GetComponent<EnemyController>();
+//
+//				if(player) objectToDestroy = player.gameObject;
+//
+//				if(enemy) objectToDestroy = enemy.gameObject;
+//
+//				if(objectToDestroy){
+//
+//					// calculate direction from target to me
+//					Vector3 forceDirection = objectToDestroy.transform.position - transform.position;
+//
+//					// apply force on target towards me
+//					var impactReceiver = objectToDestroy.GetComponent<ImpactReceiver>();
+//
+//					if (impactReceiver) {
+//
+//						impactReceiver.AddImpact(forceDirection.normalized, pullForce);
+//					}
+//
+//					if(player) player.Kill();
+//
+//					if(enemy) enemy.Kill();
+//
+//				}
+//			}
 
 		}).Add(delegate() {
 			Destroy(gameObject);

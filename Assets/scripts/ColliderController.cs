@@ -7,13 +7,13 @@ public class ColliderController : MonoBehaviour {
 
     public event Action<Collider> TriggerEnter;
 
-    public void OnTriggerEnter(Collider other) {
-        TriggerEnter(other);
+    void OnTriggerEnter(Collider other) {
+		if(TriggerEnter!=null) TriggerEnter(other);
     }
 
 	public event Action<Collider> TriggerExit;
 
-	public void OnTriggerExit(Collider other) {
-		TriggerExit(other);
+	void OnTriggerExit(Collider other) {
+		if(TriggerExit!=null) TriggerExit(other);
 	}
 }

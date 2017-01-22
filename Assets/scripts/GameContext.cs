@@ -13,6 +13,8 @@ public class GameContext : MonoSingleton<GameContext> {
 
 	public AudioClip BackgroundSound;
 
+	public AudioClip ReactorSound;
+
 	public int EnergyBlocksDestroyed = 0;
 
 

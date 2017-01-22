@@ -19,6 +19,8 @@ public class IntroUIController : MonoBehaviour {
 
 	public Button HelpBackButton;
 
+	public Button ScenesButton;
+
 	public AudioClip IntroMusic;
 
 	public GameObject effectWave;
@@ -78,6 +80,12 @@ public class IntroUIController : MonoBehaviour {
 
 			HelpPanel.SetActive(false);
 			MenuPanel.SetActive(true);
+
+		});
+
+		ScenesButton.onClick.AddListener(delegate() {
+
+			SceneManager.LoadScene ("level-select");
 
 		});
 

@@ -49,10 +49,9 @@ public class EnemyController : MonoBehaviour
 
 		this.tt ().Add (4f, t => {
 
-
-			    //
-				// instantiate the granade
-				//
+		    //
+			// instantiate the granade
+			//
 
 			GameObject grenade = Instantiate (grenadePrefab, throwPivot.position, Quaternion.identity);
 

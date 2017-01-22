@@ -2,6 +2,7 @@
 using System.Collections;
 using DG.Tweening;
 using matnesis.TeaTime;
+using Exploder.Utils;
 
 public class EnemyController : MonoBehaviour
 {
@@ -46,7 +47,7 @@ public class EnemyController : MonoBehaviour
 
 	void ThrowGrenadeRoutine(){
 
-		this.tt ().Add (1f, t => {
+		this.tt ().Add (4f, t => {
 
 
 			    //
@@ -129,4 +130,14 @@ public class EnemyController : MonoBehaviour
         });
 
     }
+
+	public void Kill(){
+
+		this.tt ("killEnemy").Add (0.15f, delegate() {
+
+			ExploderSingleton.ExploderInstance.ExplodeObject (gameObject);
+
+		}).Immutable();
+
+	}
 }

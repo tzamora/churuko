@@ -3,38 +3,80 @@ using System.Collections.Generic;
 using UnityEngine;
 using matnesis.TeaTime;
 
-public class ExplosiveTrapController : MonoBehaviour
-{
-	public GameObject pipeBody;
+public class EnemyGrenadeController : MonoBehaviour {
 
 	public float pullRadius = 2;
 	public float pullForce = 1;
+	public GameObject grenadeBody;
 	public GameObject explosionSphere;
 
 	private Vector3 sphereDefaultSize;
 
 	// Use this for initialization
-	void Start ()
-	{
+	void Start () {
+
+		Destroy (explosionSphere.GetComponent<Rigidbody>());
+
 		ActivateGrenade ();
 
-		sphereDefaultSize = new Vector3(7f, 7f, 7f);
+		sphereDefaultSize = explosionSphere.transform.localScale;
 
-		RotationRoutine ();
 	}
 
-	void RotationRoutine ()
-	{
-		this.tt	().Loop (t => {
+	public void ChangeColorRoutine(){
+	
+		Renderer grenadeRenderer = grenadeBody.GetComponent<Renderer> ();
 
-			pipeBody.transform.Rotate (new Vector3 (0f, 100f * Time.deltaTime, 0f));
+		Color defaultColor = grenadeRenderer.material.color;
+
+		this.tt().Add(0.2f, handler => {
+
+			grenadeRenderer.material.color = Color.red;	
+
+		}).Add(0.2f, handler => {
+
+			grenadeRenderer.material.color = defaultColor;	
+
+		}).Repeat();
+
+	}
+
+	public void ImplosionSphereRoutine(){
+	
+		explosionSphere.SetActive (true);
+
+		var sphereRenderer = explosionSphere.GetComponent<Renderer> ();
+
+		var currentColor = sphereRenderer.material.color;
+
+		this.tt ().Loop (2f, t=>{
+
+			//
+			// change sphere color
+			//
+
+			explosionSphere.GetComponent<Renderer> ().material.color =
+				Color.Lerp(currentColor, new Color (0f, 0f, 0f), t.t);
 
 		});
+
+		var currentSize = explosionSphere.transform.localScale;
+
+		this.tt ().Loop (2f, t=>{
+
+			//
+			// change sphere size
+			//
+
+			explosionSphere.transform.localScale = Vector3.Lerp(currentSize, Vector3.zero, t.t);
+
+		});
+
 	}
 
 	public void ExplosionSphereRoutine(){
 
-		var currentSize = explosionSphere.transform.localScale;
+		var currentSize = Vector3.zero;
 
 		var sphereRenderer = explosionSphere.GetComponent<Renderer> ();
 
@@ -50,21 +92,25 @@ public class ExplosiveTrapController : MonoBehaviour
 
 			sphereRenderer.material.color = Color.Lerp(currentColor, new Color(0f, 0f, 0f, 0f), t.t);
 
-			explosionSphere.transform.localScale = Vector3.Lerp(Vector3.zero, sphereDefaultSize, t.t);
+			explosionSphere.transform.localScale = Vector3.Lerp(Vector3.zero, new Vector3(7f, 7f, 7f), t.t);
 
 		}).Add(delegate() {
-			explosionSphere.transform.localScale = Vector3.zero;
-		}).Immutable();
+			Destroy(explosionSphere.gameObject);
+		});
 
 	}
 
 	public void ActivateGrenade(){
 
-		this.tt ().Add(2f, delegate() {
+		this.tt ().Add(1f).Add (ttHandler => {
+
+			ChangeColorRoutine();
+
+		}).Add(2f, delegate() {
 
 			ExplosionSphereRoutine();
 
-		}).Add(t=>{
+		}).Loop(0.25f, t=>{
 
 			foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius)) {
 
@@ -101,7 +147,10 @@ public class ExplosiveTrapController : MonoBehaviour
 				}
 			}
 
-		}).Repeat().Immutable();
+		}).Add(delegate() {
+			Destroy(gameObject);
+		}).Immutable();
 
 	}
+
 }

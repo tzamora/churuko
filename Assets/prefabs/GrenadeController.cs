@@ -88,7 +88,7 @@ public class GrenadeController : MonoBehaviour {
 
 		var currentColor = sphereRenderer.material.color;
 
-		GameContext.Get.CameraShakeRoutine ();
+		GameContext.Get.CameraShakeRoutine (grenadeBody.GetComponent<Renderer>().isVisible);
 
 		this.tt ().Loop (0.2f, t=>{
 

@@ -47,6 +47,7 @@ public class DoorController : MonoBehaviour {
 
 			if(GameContext.Get.EnergyBlocksDestroyed >= EnergyBlocksToOpen){
 				OpenDoorRoutine();
+				t.EndLoop();
 			}
 
 		});

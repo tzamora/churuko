@@ -8,6 +8,7 @@ public class PlatformController : MonoBehaviour {
 	public Transform FinalPosition;
 	public float MovingTime = 3f;
 	public ColliderController PlatformCollider;
+	public float waittime = 0f;
 
 	// Use this for initialization
 	void Start () {
@@ -29,11 +30,11 @@ public class PlatformController : MonoBehaviour {
 
 			transform.position = Vector3.Lerp (startPos, FinalPosition.position, handler.t);
 
-		}).Add(1f).Loop (MovingTime, handler => {
+		}).Add(waittime).Loop (MovingTime, handler => {
 
 			transform.position = Vector3.Lerp (FinalPosition.position, startPos, handler.t);
 
-		}).Add(1f).Repeat ();
+		}).Add(waittime).Repeat ();
 
 	}
 

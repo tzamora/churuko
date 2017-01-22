@@ -94,10 +94,6 @@ public class ExplosiveTrapController : MonoBehaviour
 					if(player) player.Kill();
 
 					if(enemy) enemy.Kill();
-
-					t.EndLoop();
-
-					break;
 				}
 			}
 

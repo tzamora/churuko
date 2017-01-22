@@ -13,19 +13,11 @@ public class GameContext : MonoSingleton<GameContext> {
 
 	public int EnergyBlocksDestroyed = 0;
 
-	void OnGUI(){
-		
-		if (GUILayout.Button ("Restart")) {
-			
-			Application.LoadLevel(0);
-			
-		}
-
-	}
-
 	public void CameraShakeRoutine(){
 
 		var currentCameraPosition = Camera.main.transform.position;
+
+		SoundManager.Get.PlayClip (ExplosionSound, false);
 
 		this.tt ().Add (0.01f, ()=>{
 

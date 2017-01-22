@@ -23,11 +23,11 @@ public class Adorno3Controller : MonoBehaviour {
 		this.tt ().Loop (MovingTime, handler => {
 			transform.position = Vector3.Lerp (startPos, FinalPosition.position, handler.t);
 
-		}).Add(1f).Loop (MovingTime, handler => {
+		}).Add(0f).Loop (MovingTime, handler => {
 			
 			transform.position = Vector3.Lerp (InitialPosition.position, FinalPosition.position, handler.t);
 
-		}).Add(1f).Repeat ();
+		}).Add(0f).Repeat ();
 
 	}
 }

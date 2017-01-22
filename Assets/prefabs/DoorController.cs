@@ -9,6 +9,7 @@ public class DoorController : MonoBehaviour {
 	public bool OpenDoor = false;
 	public float OpenTime = 3f;
 	public float EnergyBlocksToOpen = 5f;
+	public AudioClip DoorOpeningSound;
 
 	public Camera doorCamera;
 
@@ -32,6 +33,8 @@ public class DoorController : MonoBehaviour {
 			transform.position = Vector3.Lerp(startPos, OpenPosition.position, handler.t);
 
 		}).Add(delegate() {
+			SoundManager.Get.PlayClip (DoorOpeningSound, false);
+
 			doorCamera.enabled = false;
 		});
 

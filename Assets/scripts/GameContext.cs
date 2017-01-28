@@ -35,7 +35,7 @@ public class GameContext : MonoSingleton<GameContext> {
 
 		var currentCameraPosition = Camera.main.transform.position;
 
-		SoundManager.Get.PlayClip (ExplosionSound, false);
+		//SoundManager.Get.PlayClip (ExplosionSound, false);
 
 		this.tt ().Add (0.01f, ()=>{
 

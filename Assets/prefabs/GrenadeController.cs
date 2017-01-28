@@ -7,6 +7,11 @@ public class GrenadeController : MonoBehaviour {
 
 	public float pullRadius = 2;
 	public float pullForce = 1;
+
+    public float playerThrowForce = 1;
+
+    public float pushForce = 1000;
+
 	public GameObject grenadeBody;
 	public GameObject explosionSphere;
 	private Vector3 sphereDefaultSize;
@@ -90,7 +95,7 @@ public class GrenadeController : MonoBehaviour {
 
 		GameContext.Get.CameraShakeRoutine (grenadeBody.GetComponent<Renderer>().isVisible);
 
-		this.tt ().Loop (0.2f, t=>{
+		this.tt ().Loop (1f, t=>{
 
 			//
 			// change sphere size
@@ -114,11 +119,15 @@ public class GrenadeController : MonoBehaviour {
 
 				EnemyController enemy = collider.GetComponent<EnemyController>();
 
-				if(player) objectToDestroy = player.gameObject;
+                //GrenadeController grenade = collider.GetComponent<GrenadeController>();
+
+                if (player) objectToDestroy = player.gameObject;
 
 				if(enemy) objectToDestroy = enemy.gameObject;
 
-				if(objectToDestroy){
+                //if (grenade) objectToDestroy = grenade.gameObject;
+
+                if (objectToDestroy){
 
 					// calculate direction from target to me
 					Vector3 forceDirection = objectToDestroy.transform.position - transform.position;
@@ -128,13 +137,16 @@ public class GrenadeController : MonoBehaviour {
 
 					if (impactReceiver) {
 
-						impactReceiver.AddImpact(forceDirection.normalized, pullForce);
+						impactReceiver.AddImpact(forceDirection.normalized, playerThrowForce);
 					}
 
-					if(player) player.Kill();
+					//if(player) player.Kill();
 
 					if(enemy) enemy.Kill();
-				}
+
+                    //if (grenade) grenade.Kill();
+
+                }
 			}
 
 		}).Add(delegate() {
@@ -165,11 +177,25 @@ public class GrenadeController : MonoBehaviour {
 		
 			foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius)) {
 
-				var energyBlock = collider.GetComponent<EnergyBlockController>();
+                EnergyBlockController energyBlock = collider.GetComponent<EnergyBlockController>();
 
-				if(energyBlock){
+                EnemyGrenadeController enemyGranade = collider.GetComponent<EnemyGrenadeController>();
+
+                GrenadeController grenade = collider.GetComponent<GrenadeController>();
+
+                GameObject objectToDestroy = null;
+
+                // objectToDestroy = energyBlock.gameObject || enemyGranade.gameObject || grenade.gameObject;
+
+                if (energyBlock) objectToDestroy = energyBlock.gameObject;
+
+                if (enemyGranade) objectToDestroy = enemyGranade.gameObject;
+
+                if (grenade) objectToDestroy = grenade.gameObject;
+
+                if (objectToDestroy){
 				
-					energyBlock.enabled = false;
+					if(energyBlock) energyBlock.enabled = false;
 
 					// calculate direction from target to me
 					Vector3 forceDirection = transform.position - collider.transform.position;
@@ -191,18 +217,77 @@ public class GrenadeController : MonoBehaviour {
 			
 			ExplosionSphereRoutine();
 
-		}).Loop(0.25f, t=>{
+		})
+
+        .Loop(0.25f, t => {
+
+            foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius))
+            {
+
+                GameObject objectToDestroy = null;
+
+                PlayerController player = collider.GetComponent<PlayerController>();
+
+                EnemyController enemy = collider.GetComponent<EnemyController>();
+
+                ExplosivePropController explosiveProp = collider.GetComponent<ExplosivePropController>();
+
+                if (player) objectToDestroy = player.gameObject;
+
+                if (enemy) objectToDestroy = enemy.gameObject;
+
+                if (explosiveProp) objectToDestroy = explosiveProp.gameObject;
+
+                if (objectToDestroy)
+                {
+                    // calculate direction from target to me
+                    Vector3 forceDirection = objectToDestroy.transform.position - transform.position;
+
+                    // apply force on target towards me
+                    var impactReceiver = objectToDestroy.GetComponent<ImpactReceiver>();
+
+                    if (impactReceiver)
+                    {
+
+                        impactReceiver.AddImpact(forceDirection.normalized, playerThrowForce);
+                    }
+
+                    //if (player) player.Kill();
+
+                    if (enemy) enemy.Kill();
+
+                    if (explosiveProp) explosiveProp.DestroyProp();
+                }
+            }
+
+        })
+
+        /*.Loop(0.25f, t=>{
 
 			foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius)) {
 
-				var energyBlock = collider.GetComponent<EnergyBlockController>();
+                EnergyBlockController energyBlock = collider.GetComponent<EnergyBlockController>();
 
-				if(energyBlock){
+                EnemyGrenadeController enemyGranade = collider.GetComponent<EnemyGrenadeController>();
 
-					energyBlock.PrepareToDestruction();
+                GrenadeController grenade = collider.GetComponent<GrenadeController>();
 
-					// calculate direction from target to me
-					Vector3 forceDirection = collider.transform.position - transform.position;
+                GameObject objectToDestroy = null;
+
+                // objectToDestroy = energyBlock.gameObject || enemyGranade.gameObject || grenade.gameObject;
+
+                if (energyBlock) objectToDestroy = energyBlock.gameObject;
+
+                if (enemyGranade) objectToDestroy = enemyGranade.gameObject;
+
+                if (grenade) objectToDestroy = grenade.gameObject;
+
+                if (objectToDestroy)
+                {
+                    if (energyBlock) energyBlock.PrepareToDestruction();
+                    
+                    // calculate direction from target to me
+                    Vector3 forceDirection = collider.transform.position - transform.position;
 
 					// apply force on target towards me
 					var rigidBody = collider.GetComponent<Rigidbody>();
@@ -213,41 +298,9 @@ public class GrenadeController : MonoBehaviour {
 					}	
 				}
 			}
-				//
-				//
-				//
 
-//				GameObject objectToDestroy = null;
-//
-//				PlayerController player = collider.GetComponent<PlayerController>();
-//
-//				EnemyController enemy = collider.GetComponent<EnemyController>();
-//
-//				if(player) objectToDestroy = player.gameObject;
-//
-//				if(enemy) objectToDestroy = enemy.gameObject;
-//
-//				if(objectToDestroy){
-//
-//					// calculate direction from target to me
-//					Vector3 forceDirection = objectToDestroy.transform.position - transform.position;
-//
-//					// apply force on target towards me
-//					var impactReceiver = objectToDestroy.GetComponent<ImpactReceiver>();
-//
-//					if (impactReceiver) {
-//
-//						impactReceiver.AddImpact(forceDirection.normalized, pullForce);
-//					}
-//
-//					if(player) player.Kill();
-//
-//					if(enemy) enemy.Kill();
-//
-//				}
-//			}
-
-		}).Add(delegate() {
+		})*/
+        .Add(delegate() {
 			Destroy(gameObject);
 		}).Immutable();
 

@@ -30,7 +30,7 @@ public class GrenadeController : MonoBehaviour {
 
 	}
 
-	public void ChangeColorRoutine(){
+	public void BlinkEffectRoutine(){
 
 		Renderer grenadeRenderer = grenadeBody.GetComponent<Renderer> ();
 
@@ -48,7 +48,7 @@ public class GrenadeController : MonoBehaviour {
 
 	}
 
-	public void ImplosionSphereRoutine(){
+	public void ImplosionEffectRoutine(){
 	
 		explosionSphere.SetActive (true);
 
@@ -81,7 +81,7 @@ public class GrenadeController : MonoBehaviour {
 
 	}
 
-	public void ExplosionSphereRoutine(){
+	public void ExplosionEffectRoutine(){
 
 		//
 		//
@@ -95,7 +95,7 @@ public class GrenadeController : MonoBehaviour {
 
 		GameContext.Get.CameraShakeRoutine (grenadeBody.GetComponent<Renderer>().isVisible);
 
-		this.tt ().Loop (1f, t=>{
+		this.tt ().Loop (0.25f, t=>{
 
 			//
 			// change sphere size
@@ -159,23 +159,38 @@ public class GrenadeController : MonoBehaviour {
 
 		this.tt ().Add(0.5f).Add (ttHandler => {
 
+            //
+            // play hitting sound 
+            //
+
 			SoundManager.Get.PlayClip (GrenadeHitGroundSound, false);
 
 		}).Add(1f).Add (ttHandler => {
 
-			SoundManager.Get.PlayClip (GrenadeChargingSound, false);
+            //
+            // play grenade blinking sound and began the blinking effect
+            //
 
-			ChangeColorRoutine();
+            SoundManager.Get.PlayClip (GrenadeChargingSound, false);
+
+			BlinkEffectRoutine();
 
 		}).Add(1f, t=>{
 
-			SoundManager.Get.PlayClip (ImplosionSound, false);
+            //
+            // play gravity sucking sound and began the Gravity effect
+            //
 
-			ImplosionSphereRoutine();
+            SoundManager.Get.PlayClip (ImplosionSound, false);
+
+			ImplosionEffectRoutine();
 
 		}).Loop(2f, handler => {
-		
-			foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius)) {
+
+            #region gravity logic
+
+            foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius))
+            {
 
                 EnergyBlockController energyBlock = collider.GetComponent<EnergyBlockController>();
 
@@ -193,29 +208,34 @@ public class GrenadeController : MonoBehaviour {
 
                 if (grenade) objectToDestroy = grenade.gameObject;
 
-                if (objectToDestroy){
-				
-					if(energyBlock) energyBlock.enabled = false;
+                if (objectToDestroy)
+                {
 
-					// calculate direction from target to me
-					Vector3 forceDirection = transform.position - collider.transform.position;
+                    if (energyBlock) energyBlock.enabled = false;
 
-					// apply force on target towards me
-					var rigidBody = collider.GetComponent<Rigidbody>();
+                    // calculate direction from target to me
+                    Vector3 forceDirection = transform.position - collider.transform.position;
 
-					if (rigidBody) {
+                    // apply force on target towards me
+                    var rigidBody = collider.GetComponent<Rigidbody>();
 
-						rigidBody.isKinematic = false;
+                    if (rigidBody)
+                    {
 
-						rigidBody.AddForce(forceDirection.normalized * 1000 * Time.fixedDeltaTime);
-					}
+                        rigidBody.isKinematic = false;
 
-				}
-			}
+                        rigidBody.AddForce(forceDirection.normalized * 1000 * Time.fixedDeltaTime);
+                    }
 
-		}).Add(delegate() {
+                }
+            }
+
+            #endregion
+            
+
+        }).Add(delegate() {
 			
-			ExplosionSphereRoutine();
+			ExplosionEffectRoutine();
 
 		})
 
@@ -223,6 +243,7 @@ public class GrenadeController : MonoBehaviour {
 
             foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius))
             {
+                #region explosion logic 
 
                 GameObject objectToDestroy = null;
 
@@ -256,50 +277,17 @@ public class GrenadeController : MonoBehaviour {
 
                     if (enemy) enemy.Kill();
 
-                    if (explosiveProp) explosiveProp.DestroyProp();
+                    if (explosiveProp)
+                    {
+                        explosiveProp.DestroyProp();
+                    } 
                 }
+
+                #endregion
             }
 
         })
-
-        /*.Loop(0.25f, t=>{
-
-			foreach (Collider collider in Physics.OverlapSphere(transform.position, pullRadius)) {
-
-                EnergyBlockController energyBlock = collider.GetComponent<EnergyBlockController>();
-
-                EnemyGrenadeController enemyGranade = collider.GetComponent<EnemyGrenadeController>();
-
-                GrenadeController grenade = collider.GetComponent<GrenadeController>();
-
-                GameObject objectToDestroy = null;
-
-                // objectToDestroy = energyBlock.gameObject || enemyGranade.gameObject || grenade.gameObject;
-
-                if (energyBlock) objectToDestroy = energyBlock.gameObject;
-
-                if (enemyGranade) objectToDestroy = enemyGranade.gameObject;
-
-                if (grenade) objectToDestroy = grenade.gameObject;
-
-                if (objectToDestroy)
-                {
-                    if (energyBlock) energyBlock.PrepareToDestruction();
-                    
-                    // calculate direction from target to me
-                    Vector3 forceDirection = collider.transform.position - transform.position;
-
-					// apply force on target towards me
-					var rigidBody = collider.GetComponent<Rigidbody>();
-
-					if (rigidBody) {
-
-						rigidBody.AddForce(forceDirection.normalized * 1000f * Time.fixedDeltaTime);
-					}	
-				}
-			}
-
-		})*/
+        
         .Add(delegate() {
 			Destroy(gameObject);
 		}).Immutable();

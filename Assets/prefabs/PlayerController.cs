@@ -41,6 +41,10 @@ public class PlayerController : MonoBehaviour
 
 	public CharacterController controller;
 
+    public int thrownGrenades = 0;
+
+    public int maxOfGrenades = 0;
+
     // Use this for initialization
     void Start()
     {
@@ -55,19 +59,31 @@ public class PlayerController : MonoBehaviour
 
 			if(Input.GetButtonDown("Fire1")){
 
-				//
-				// instantiate the granade
-				//
+                //
+                // instantiate the granade
+                //
 
-				SoundManager.Get.PlayClip (ThrowGrenadeSound, false);
+                if (thrownGrenades <= maxOfGrenades) {
 
-				GameObject grenade = Instantiate (grenadePrefab, throwPivot.position, Quaternion.identity);
+                    SoundManager.Get.PlayClip(ThrowGrenadeSound, false);
 
-				Vector3 throwDirection = -throwPivot.forward + new Vector3(0f, 1f, 0f);
+                    GameObject grenade = Instantiate(grenadePrefab, throwPivot.position, Quaternion.identity);
 
-				grenade.GetComponent<Rigidbody>().AddForce((throwDirection * grenadeThrowforce));
+                    Vector3 throwDirection = -throwPivot.forward + new Vector3(0f, 1f, 0f);
 
-			}
+                    grenade.GetComponent<Rigidbody>().AddForce((throwDirection * grenadeThrowforce));
+
+                    GrenadeController granadaActivada = grenade.GetComponent<GrenadeController>();
+
+                    granadaActivada.acaboDeExplotar = delegate ()
+                    {
+                        thrownGrenades--;
+                    };
+
+                    thrownGrenades++;
+                }
+
+            }
 
 		}).Immutable();
 

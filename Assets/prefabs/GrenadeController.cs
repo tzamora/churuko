@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using matnesis.TeaTime;
+using System;
 
 public class GrenadeController : MonoBehaviour {
 
@@ -19,8 +20,10 @@ public class GrenadeController : MonoBehaviour {
 	public AudioClip GrenadeChargingSound;
 	public AudioClip ImplosionSound;
 
-	// Use this for initialization
-	void Start () {
+    public Action acaboDeExplotar;
+
+    // Use this for initialization
+    void Start () {
 
 		Destroy (explosionSphere.GetComponent<Rigidbody>());
 
@@ -289,7 +292,11 @@ public class GrenadeController : MonoBehaviour {
         })
         
         .Add(delegate() {
-			Destroy(gameObject);
+
+            acaboDeExplotar();
+            
+            Destroy(gameObject);
+
 		}).Immutable();
 
 	}
